@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'features/video_community/presentation/screens/video_feed_screen.dart';
-import 'features/video_community/presentation/screens/upload_video_screen.dart';
-import 'features/profile/presentation/screens/profile_screen.dart';
+import 'package:flowa/features/video_community/presentation/screens/video_feed_screen.dart';
+import 'package:flowa/features/video_community/presentation/screens/upload_video_screen.dart';
+import 'package:flowa/features/profile/presentation/screens/profile_screen.dart';
 
 class AppNavigation extends StatefulWidget {
-  final String overrideRole; // Menerima lemparan data kuncian dari login_screen
+  final String overrideRole;
   
   const AppNavigation({super.key, required this.overrideRole});
 
@@ -17,10 +17,10 @@ class _AppNavigationState extends State<AppNavigation> {
 
   @override
   Widget build(BuildContext context) {
-    // Membaca peran pengguna secara dinamis dari hasil login
     final String currentRole = widget.overrideRole;
     final isCreatorOrAdmin = currentRole == 'creator' || currentRole == 'admin';
 
+    // Menyusun halaman secara dinamis berdasarkan jumlah menu bawah yang muncul
     final List<Widget> screens = [
       const VideoFeedScreen(),
       if (isCreatorOrAdmin) const UploadVideoScreen(), 
@@ -48,14 +48,10 @@ class _AppNavigationState extends State<AppNavigation> {
             icon: Icon(Icons.home_filled, size: 26),
             label: 'Beranda',
           ),
+          // SEKAT KETAT: Tombol "+" hanya dimasukkan ke dalam daftar menu jika user adalah admin/kreator
           if (isCreatorOrAdmin)
-            BottomNavigationBarItem(
-              icon: Container(
-                width: 45,
-                height: 30,
-                decoration: BoxDecoration(color: Colors.purple, borderRadius: BorderRadius.circular(8)),
-                child: const Icon(Icons.add, color: Colors.white, size: 22),
-              ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.add_box, color: Colors.purple, size: 28),
               label: 'Ngonten',
             ),
           const BottomNavigationBarItem(
