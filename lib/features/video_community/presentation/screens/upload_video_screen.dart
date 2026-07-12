@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flowa/core/services/firebase_service.dart'; // Import jembatan layanan cloud
 import 'dart:io';
 
 class UploadVideoScreen extends StatefulWidget {
@@ -30,7 +31,7 @@ class _UploadVideoScreenState extends State<UploadVideoScreen> {
     }
   }
 
-  // FUNGSI ASLI: Mengunggah berkas metadata video langsung ke koleksi 'flowa_videos' Firebase Anda
+  // ALUR PROSES ASLI SEKELAS TIKTOK & DESAPAY NYATA:
   void _uploadVideoToFirebase() async {
     if (_selectedVideoFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -44,23 +45,34 @@ class _UploadVideoScreenState extends State<UploadVideoScreen> {
     });
 
     try {
-      // Menyimpan data teks, tag algoritma, dan jalur file ke Firestore Cloud desapay-10614
+      // TAHAP 1: Unggah berkas fisik .mp4 ke Google Storage untuk mendapatkan URL internet
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sedang mengompres dan mengirim video ke cloud storage...')),
+      );
+      
+      String? videoCloudUrl = await FirebaseService.uploadVideoFileToStorage(_selectedVideoFile!);
+
+      if (videoCloudUrl == null) {
+        throw Exception("Gagal mendapatkan link URL video dari server storage.");
+      }
+
+      // TAHAP 2: Masukkan URL resmi dan teks caption ke Firestore database agar langsung muncul di FYP warga
       await FirebaseFirestore.instance.collection('flowa_videos').add({
-        'creator': 'Hilwa_Kreatif', // Nama kreator pengunggah
+        'creator': 'Hilwa_Kreatif', 
         'caption': _captionController.text.trim(),
         'category': _tagsController.text.trim().replaceAll('#', ''),
         'type': 'content',
-        'videoUrl': _selectedVideoFile!.path, // Jalur penyimpanan berkas lokal/cloud
+        'videoUrl': videoCloudUrl, // <-- URL ASLI INTERNET RESMI SUDAH TERKUNCI DI SINI!
         'likes': 0,
         'comments': 0,
+        'bookmarks': 0,
         'createdAt': FieldValue.serverTimestamp(),
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Hore! Video berhasil diunggah ke server Flowa!')),
+        const SnackBar(content: Text('Hore! Video karya Anda resmi mengudara di Flowa!')),
       );
 
-      // Membersihkan kembali kolom inputan setelah sukses
       setState(() {
         _selectedVideoFile = null;
         _captionController.clear();
@@ -68,7 +80,7 @@ class _UploadVideoScreenState extends State<UploadVideoScreen> {
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menyimpan ke cloud: $e')),
+        SnackBar(content: Text('Gagal publikasi konten: $e')),
       );
     } finally {
       setState(() {
@@ -87,7 +99,17 @@ class _UploadVideoScreenState extends State<UploadVideoScreen> {
         elevation: 0,
       ),
       body: _isLoading 
-        ? const Center(child: CircularProgressIndicator(color: Colors.purple))
+        ? const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(color: Colors.purple),
+                SizedBox(height: 16),
+                Text("Memproses berkas video ke internet...", style: TextStyle(color: Colors.purple, fontWeight: FontWeight.bold)),
+                Text("Mohon jangan tutup aplikasi", style: TextStyle(color: Colors.grey, fontSize: 12)),
+              ],
+            ),
+          )
         : SingleChildScrollView(
             padding: const EdgeInsets.all(20.0),
             child: Column(
@@ -99,9 +121,9 @@ class _UploadVideoScreenState extends State<UploadVideoScreen> {
                     width: double.infinity,
                     height: 200,
                     decoration: BoxDecoration(
-                      color: Colors.grey[200],
+                      color: Colors.grey[100],
                       borderRadius: BorderRadius.circular(15),
-                      border: Border.all(color: Colors.grey[400]!),
+                      border: Border.all(color: Colors.grey[300]!),
                     ),
                     child: _selectedVideoFile == null
                         ? const Column(
