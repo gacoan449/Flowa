@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flowa/features/video_community/presentation/screens/video_feed_screen.dart';
 import 'package:flowa/features/admin/presentation/screens/admin_dashboard_screen.dart';
+import 'package:flowa/features/auth/presentation/screens/login_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
-  final String userRole; // Menerima data role dari halaman navigasi utama
+  final String userRole;
 
-  // Data tiruan profil yang disesuaikan
   final Map<String, dynamic> _mockUserData = {
-    "username": "Warga_Flowa_Id",
+    "username": "Hilwa_Kreatif",
     "isVerified": true,
-    "bio": "Menikmati konten seru di aplikasi Flowa ✨",
+    "bio": "Menikmati aliran hiburan video seru di aplikasi Flowa ✨",
     "avatarUrl": "https://unsplash.com",
     "followers": 15400,
     "following": 182,
@@ -22,12 +22,56 @@ class ProfileScreen extends StatelessWidget {
     "https://unsplash.com",
   ];
 
-  ProfileScreen({super.key, required this.userRole}); // Constructor wajib meminta data role
+  ProfileScreen({super.key, required this.userRole});
+
+  // FUNGSI NYATA: Memunculkan menu opsi pengaturan akun dan tombol Logout dari bawah HP
+  void _showSettingsMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10))),
+              const SizedBox(height: 15),
+              ListTile(
+                leading: const Icon(Icons.edit_outlined, color: Colors.black87),
+                title: const Text("Ubah Foto & Profil", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w500)),
+                onTap: () => Navigator.pop(context),
+              ),
+              ListTile(
+                leading: const Icon(Icons.whatsapp, color: Colors.green),
+                title: const Text("Hubungi Bantuan Pusat", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w500)),
+                onTap: () => Navigator.pop(context),
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.logout, color: Colors.red),
+                title: const Text("Keluar Aplikasi (Logout)", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                onTap: () {
+                  Navigator.pop(context); // Tutup panel bottom sheet
+                  // AKSI LOGOUT NYATA: Menendang keluar pengguna ke halaman LoginScreen awal
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Mengecek apakah yang membuka halaman ini bertindak sebagai kreator atau bukan
-    final isCreator = userRole == 'creator';
+    final isCreator = userRole == 'creator' || userRole == 'admin';
+    final isAdminOwner = userRole == 'admin';
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -45,13 +89,14 @@ class ProfileScreen extends StatelessWidget {
           children: [
             const SizedBox(height: 20),
             
-            // Foto Profil dengan Akses Ruang Admin Rahasia Anda
             GestureDetector(
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
-                );
+                if (isAdminOwner) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
+                  );
+                }
               },
               child: Stack(
                 alignment: Alignment.bottomRight,
@@ -82,7 +127,6 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 25),
 
-            // PANDUAN UTAMA: Baris Statistik ini hanya dimunculkan khusus untuk Konten Kreator
             if (isCreator) ...[
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -105,7 +149,7 @@ class ProfileScreen extends StatelessWidget {
                     side: const BorderSide(color: Colors.grey),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  onPressed: () {},
+                  onPressed: () => _showSettingsMenu(context), // Memicu pembukaan menu bottom sheet di atas
                   child: Text(
                     isCreator ? "Edit Profil Kreator" : "Pengaturan Akun",
                     style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
@@ -117,7 +161,6 @@ class ProfileScreen extends StatelessWidget {
 
             const Divider(height: 1, thickness: 1),
 
-            // Grid Video hanya dimunculkan jika status akun adalah 'creator'
             if (isCreator) ...[
               Padding(
                 padding: const EdgeInsets.all(8.0),
@@ -168,7 +211,6 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
             ] else ...[
-              // Tampilan bersih minimalis jika yang masuk adalah user biasa (penonton)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 80),
                 child: Column(
