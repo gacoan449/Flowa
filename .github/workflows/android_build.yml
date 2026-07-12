@@ -29,32 +29,43 @@ jobs:
           channel: 'stable'
           cache: true
 
-      # Otomatis membuat folder Android bawaan dan langsung menyuntikkan izin INTERNET & GALERI VIDEO NYATA ke sistem batin Android
+      # 1. Otomatis membuat folder Android bawaan
       - name: Generate Android Folder Automatically
         run: |
           flutter create . --platforms=android --org Flowa
           sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" \/>\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" \/>\n    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" \/>' android/app/src/main/AndroidManifest.xml
 
-      # Menyinkronkan file rahasia JSON Firebase desapay-10614 milik Anda ke posisi arsitektur yang tepat
+      # 2. PERBAIKAN TOTAL: Memaksa penyalinan file google-services.json ke folder tujuan Android yang sah secara ketat
       - name: Setup Firebase Config File
         run: |
           mkdir -p android/app
           if [ -f google-services.json ]; then
-            cp google-services.json android/app/
+            cp -f google-services.json android/app/google-services.json
+            echo "SUKSES: File Firebase berhasil disalin ke folder Android App utama!"
+          else
+            echo "PERINGATAN: File google-services.json tidak ditemukan di folder utama root repositori."
           fi
 
       - name: Mengunduh Paket Dependencies
         run: flutter pub get
 
-      # Memulai perakitan mode release murni dengan pembagian 3 jenis arsitektur arsitektur HP (Split ABI)
-      - name: Build APK Release Ringan
-        run: flutter build apk --release --split-per-abi
+      # 3. Menyuntikkan pembuatan ikon kustom otomatis jika logo.png ada
+      - name: Generate App Launcher Icons
+        run: |
+          if [ -f logo.png ]; then
+            flutter pub run flutter_launcher_icons
+          else
+            echo "Melewati pembuatan ikon kustom karena logo.png tidak ditemukan."
+          fi
 
-      # PENTING: Jalur path di bawah ini dikunci ketat HANYA mengambil file berakhiran -release.apk saja
-      # Ini adalah kunci rahasia agar file sampah 277MB dibuang total dan menyisakan file belasan MB saja
+      # 4. Build 1 APK Universal agar langsung siap sebar ke warga lewat WhatsApp
+      - name: Build APK Release Universal
+        run: flutter build apk --release
+
+      # 5. Mengunggah file app-release.apk tunggal bersih membawa kunci Firebase
       - name: Upload File APK Hasil Build
         uses: actions/upload-artifact@v4
         with:
-          name: Flowa-Release-APK
-          path: build/app/outputs/flutter-apk/*-release.apk
+          name: Flowa-Universal-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 7
