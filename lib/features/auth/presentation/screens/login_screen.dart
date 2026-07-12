@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../app_navigation.dart';
+import 'register_screen.dart'; // Import halaman pendaftaran baru
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -9,13 +10,13 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _identifierController = TextEditingController(); // Bisa diisi Nomor HP / Email warga
+  final _identifierController = TextEditingController(); 
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
 
-  // 1. KUNCI RAHASIA ADMIN (Tersimpan aman di GitHub, warga tidak akan pernah tahu!)
-  final String _emailAdminRahasia = "hilwaowner@flowa.com"; // Silakan ganti dengan email Anda jika mau
-  final String _sandiAdminRahasia = "taniowner77";          // Silakan ganti dengan sandi rahasia Anda
+  // KUNCI RAHASIA ADMIN (Tersimpan aman di GitHub, warga tidak akan pernah tahu!)
+  final String _emailAdminRahasia = "hilwaowner@flowa.com"; 
+  final String _sandiAdminRahasia = "taniowner77";          
 
   void _handleLogin() {
     String account = _identifierController.text.trim();
@@ -28,13 +29,12 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    // 2. LOGIKA KECANGGIHAN DESAPAY: Deteksi otomatis apakah yang login adalah sang Pemilik Aplikasi
+    // Deteksi otomatis apakah yang login adalah sang Pemilik Utama Aplikasi
     if (account == _emailAdminRahasia && password == _sandiAdminRahasia) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Selamat datang Pemilik Utama! Mengaktifkan Ruang Kontrol Admin...')),
       );
 
-      // LANGSUNG DIKUNCI MASUK SEBAGAI 'admin' TERKENDALIAN PENUH!
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -95,7 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Input Kata Sandi dengan Tombol Intip
+                // Input Kata Sandi
                 TextField(
                   controller: _passwordController,
                   obscureText: !_isPasswordVisible,
@@ -134,12 +134,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 25),
 
+                // AKSI BARU: Tombol teks daftar sekarang sudah aktif membuka register_screen.dart
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text("Belum punya akun Flowa? ", style: TextStyle(color: Colors.white54)),
                     GestureDetector(
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                        );
+                      },
                       child: const Text("Daftar Sekarang", style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
                     ),
                   ],
