@@ -9,9 +9,13 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _identifierController = TextEditingController(); // Bisa diisi Nomor HP atau Email
+  final _identifierController = TextEditingController(); // Bisa diisi Nomor HP / Email warga
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
+
+  // 1. KUNCI RAHASIA ADMIN (Tersimpan aman di GitHub, warga tidak akan pernah tahu!)
+  final String _emailAdminRahasia = "hilwaowner@flowa.com"; // Silakan ganti dengan email Anda jika mau
+  final String _sandiAdminRahasia = "taniowner77";          // Silakan ganti dengan sandi rahasia Anda
 
   void _handleLogin() {
     String account = _identifierController.text.trim();
@@ -24,15 +28,32 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    // Simulasi Validasi Masuk Aplikasi
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Selamat datang kembali, $account!')),
-    );
+    // 2. LOGIKA KECANGGIHAN DESAPAY: Deteksi otomatis apakah yang login adalah sang Pemilik Aplikasi
+    if (account == _emailAdminRahasia && password == _sandiAdminRahasia) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selamat datang Pemilik Utama! Mengaktifkan Ruang Kontrol Admin...')),
+      );
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const AppNavigation()),
-    );
+      // LANGSUNG DIKUNCI MASUK SEBAGAI 'admin' TERKENDALIAN PENUH!
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const AppNavigation(overrideRole: 'admin'),
+        ),
+      );
+    } else {
+      // Alur masuk untuk Warga Desa biasa (Role otomatis dikunci sebagai 'user' penonton biasa)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Masuk sukses sebagai warga: $account')),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const AppNavigation(overrideRole: 'user'),
+        ),
+      );
+    }
   }
 
   @override
@@ -59,11 +80,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 40),
 
-                // Input Nomor HP atau Email (Persis Gaya DesaPay)
+                // Input Akun
                 TextField(
                   controller: _identifierController,
                   style: const TextStyle(color: Colors.white),
-                  keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
                     hintText: "Nomor HP atau Email",
                     hintStyle: const TextStyle(color: Colors.white38),
@@ -75,7 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Input Kata Sandi dengan Tombol Intip (Eye Icon)
+                // Input Kata Sandi dengan Tombol Intip
                 TextField(
                   controller: _passwordController,
                   obscureText: !_isPasswordVisible,
@@ -97,17 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
-
-                // Lupa Sandi
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {},
-                    child: const Text("Lupa Kata Sandi?", style: TextStyle(color: Colors.amber)),
-                  ),
-                ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 35),
 
                 // Tombol Masuk Utama
                 SizedBox(
@@ -122,17 +132,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Text("Masuk", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 25),
 
-                // Tombol Pendaftaran Akun Baru
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text("Belum punya akun Flowa? ", style: TextStyle(color: Colors.white54)),
                     GestureDetector(
-                      onTap: () {
-                        // Aksi buka halaman daftar
-                      },
+                      onTap: () {},
                       child: const Text("Daftar Sekarang", style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
                     ),
                   ],
