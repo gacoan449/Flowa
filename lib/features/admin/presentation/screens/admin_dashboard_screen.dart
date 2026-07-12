@@ -38,10 +38,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Colors.grey[200], // Perbaikan warna background
       appBar: AppBar(
         title: const Text("Pusat Pengawasan Admin Flowa", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.red[800], // Warna merah tegas khusus penanda ruang admin
+        backgroundColor: Colors.red, // Warna merah tegas khusus penanda ruang admin
         elevation: 0,
       ),
       body: Padding(
@@ -70,7 +70,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       itemBuilder: (context, index) {
                         final report = _reportedContents[index];
                         return Card(
-                          margin: const EdgeInsets.bottomAt(12),
+                          // PERBAIKAN: Menggunakan properti margin yang benar bawaan Flutter
+                          margin: const EdgeInsets.only(bottom: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),
@@ -78,13 +79,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.between,
+                                  // PERBAIKAN: Menggunakan properti perataan layout antar-ujung yang valid
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text("@${report['creator']}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red)),
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(20)),
-                                      child: Text("${report['reportsCount']} Laporan", style: TextStyle(color: Colors.red[800], fontSize: 12, fontWeight: FontWeight.bold)),
+                                      child: Text("${report['reportsCount']} Laporan", style: const TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.bold)),
                                     )
                                   ],
                                 ),
@@ -110,7 +112,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                     ),
                                     const SizedBox(width: 8),
                                     ElevatedButton(
-                                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red[800]),
+                                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                                       onPressed: () => _actionTake(report['id'], "Blokir Permanen Akun Kreator"),
                                       child: const Text("Blokir Kreator", style: TextStyle(color: Colors.white)),
                                     ),
