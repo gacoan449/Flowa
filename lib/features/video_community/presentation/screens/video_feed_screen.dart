@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../widgets/interaction_buttons.dart';
-// Import komponen pemutar video asli yang baru kita buat
 import '../widgets/video_card.dart';
+// Import controller logika yang baru kita buat
+import '../../providers/video_feed_provider.dart';
 
 class VideoFeedScreen extends StatefulWidget {
   const VideoFeedScreen({super.key});
@@ -11,12 +12,15 @@ class VideoFeedScreen extends StatefulWidget {
 }
 
 class _VideoFeedScreenState extends State<VideoFeedScreen> {
-  // Data simulasi lengkap dengan URL video online asli untuk pengujian
+  // Menyimpan status video yang disukai oleh user (ID Video : Status Like)
+  final Map<String, bool> _likedVideosStatus = {};
+
   final List<Map<String, dynamic>> _flowaVideos = [
     {
       "id": "1", 
       "creator": "Hilwa_Kreatif", 
       "caption": "Pemandangan alam yang sangat indah luar biasa! ✨ #flowa #nature",
+      "category": "nature",
       "type": "content", 
       "videoUrl": "https://mixkit.co",
       "likes": 1250,
@@ -26,8 +30,9 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
       "id": "2", 
       "creator": "Sponsor_Desa", 
       "caption": "Solusi cerdas transaksi warga desa! Kirim uang tanpa admin pakai #DesaPay dan belanja hasil bumi di #PetaniDesa 🌾💳",
+      "category": "ads",
       "type": "ads", 
-      "videoUrl": "https://mixkit.co", // Ini slot iklan rahasia Anda!
+      "videoUrl": "https://mixkit.co",
       "likes": 5400,
       "comments": 310
     },
@@ -35,6 +40,7 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
       "id": "3", 
       "creator": "Anak_Desa_Ngonten", 
       "caption": "Suasana sore hari yang menenangkan di tepi sungai 🌊",
+      "category": "entertainment",
       "type": "content", 
       "videoUrl": "https://mixkit.co",
       "likes": 920,
@@ -47,18 +53,18 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: PageView.builder(
-        scrollDirection: Axis.vertical, // Geser vertikal ala TikTok/FB Watch
+        scrollDirection: Axis.vertical,
         itemCount: _flowaVideos.length,
         itemBuilder: (context, index) {
           final video = _flowaVideos[index];
           final isAds = video['type'] == 'ads';
+          final videoId = video['id'] as String;
+          final isLiked = _likedVideosStatus[videoId] ?? false;
 
           return Stack(
             children: [
-              // 1. LAYER UTAMA: Pemutar Video Asli dari Internet
               VideoCard(videoUrl: video['videoUrl']),
               
-              // Gelap transparan di bagian bawah agar teks putih lebih mudah dibaca
               Positioned.fill(
                 child: Container(
                   decoration: const BoxDecoration(
@@ -72,7 +78,6 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
                 ),
               ),
 
-              // 2. LAYER ELEMEN IKLAN: Muncul jika tipe video adalah 'ads'
               if (isAds)
                 Positioned(
                   bottom: 170,
@@ -86,7 +91,26 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
                       elevation: 5,
                     ),
                     onPressed: () {
-                      // Di sinilah logika dipicu untuk mengarahkan pengguna ke APK Petani Desa/DesaPay
+                      // Memicu pencatatan algoritma bahwa iklan diklik
+                      VideoFeedController.logUserEngagement(
+                        videoId: videoId, 
+                        category: video['category'], 
+                        actionType: 'click_ads',
+                      );
+                      // Tampilkan dialog simulasi pengalihan ke ekosistem toko Anda
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text("Mengalihkan..."),
+                          content: const Text("Membuka Aplikasi Petani Desa Berkah & DesaPay..."),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text("OK"),
+                            )
+                          ],
+                        ),
+                      );
                     },
                     child: const Text(
                       "Buka Aplikasi Sekarang", 
@@ -95,11 +119,10 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
                   ),
                 ),
 
-              // 3. LAYER INFORMASI: Nama Kreator & Caption (Kiri Bawah)
               Positioned(
                 bottom: 30,
                 left: 16,
-                right: 80, // Jarak aman agar tidak bertabrakan dengan tombol interaksi
+                right: 80,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -119,7 +142,6 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
                 ),
               ),
 
-              // 4. LAYER TOMBOL INTERAKSI: Like, Komen, Share (Kanan Bawah)
               Positioned(
                 bottom: 40,
                 right: 16,
@@ -127,13 +149,38 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
                   likes: video['likes'],
                   comments: video['comments'],
                   onLikePressed: () {
-                    // Masukkan logika penambahan jumlah like di sini
+                    setState(() {
+                      // 1. Balikkan status like di UI HP
+                      _likedVideosStatus[videoId] = !isLiked;
+                      
+                      // 2. Kalkulasi angka menggunakan controller bisnis
+                      final updatedVideo = VideoFeedController.handleLikeAction(
+                        videoData: video, 
+                        isCurrentlyLiked: isLiked,
+                      );
+                      video['likes'] = updatedVideo['likes'];
+                    });
+
+                    // 3. Kirim data interaksi ke server penentu algoritma FYP
+                    VideoFeedController.logUserEngagement(
+                      videoId: videoId, 
+                      category: video['category'], 
+                      actionType: isLiked ? 'unlike' : 'like',
+                    );
                   },
                   onCommentPressed: () {
-                    // Masukkan logika pemicu pop-up kolom komentar di sini
+                    VideoFeedController.logUserEngagement(
+                      videoId: videoId, 
+                      category: video['category'], 
+                      actionType: 'open_comment',
+                    );
                   },
                   onSharePressed: () {
-                    // Masukkan logika fitur share/bagikan tautan video di sini
+                    VideoFeedController.logUserEngagement(
+                      videoId: videoId, 
+                      category: video['category'], 
+                      actionType: 'share',
+                    );
                   },
                 ),
               ),
