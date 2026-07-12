@@ -10,10 +10,11 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Paket Wajib untuk Koneksi Server Database Firebase Anda
+  # Paket Lengkap Koneksi Server Database Firebase Proyek Anda (desapay-10614)
   firebase_core: ^3.0.0
   firebase_auth: ^5.0.0
   cloud_firestore: ^5.0.0
+  firebase_storage: ^11.0.0 # Paket Baru Penyimpanan Berkas Fisik Video
 
   # Paket Utama untuk Fitur Utama Flowa (Kreator & Video)
   video_player: ^2.9.2
@@ -23,6 +24,11 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
+  # PUSTAKA GENERATOR IKON: Bahan untuk mencetak ikon otomatis di server awan
+  flutter_launcher_icons: ^0.13.1
 
-flutter:
-  uses-material-design: true
+# KONFIGURASI RAHASIA IKON RESMI APP FLOWA
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "logo.png" # Membaca file gambar logo.png yang Anda taruh di folder utama
