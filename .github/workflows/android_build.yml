@@ -14,47 +14,49 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Mengambil kode terbaru dari repositori GitHub Anda
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2. Menyiapkan sistem Java (Wajib untuk build Android)
+      # Menyiapkan lingkungan Java
       - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
 
-      # 3. Menyiapkan Framework Flutter versi stabil terbaru
+      # Menyiapkan Flutter
       - name: Setup Flutter Framework
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           cache: true
 
-      # 4. PERINTAH RAHASIA: Otomatis melahirkan folder Android dan file build.gradle yang hilang
-      # Parameter --org digunakan agar Package Name aplikasi Anda menjadi Flowa.com secara otomatis
+      # Otomatis membuat folder Android bawaan jika belum ada
       - name: Generate Android Folder Automatically
         run: flutter create . --platforms=android --org Flowa
 
-      # 5. Memindahkan file google-services.json Anda ke tempat yang tepat setelah folder Android lahir
+      # Menyinkronkan file rahasia Firebase ke posisi yang tepat
       - name: Setup Firebase Config File
         run: |
           mkdir -p android/app
           if [ -f google-services.json ]; then
             cp google-services.json android/app/
-          elif [ -f android/app/google-services.json ]; then
-            echo "File Firebase sudah berada di posisi yang benar."
-          else
-            echo "Peringatan: File google-services.json belum ditemukan."
           fi
 
-      # 6. Mengunduh semua paket dependency (video_player, firebase, dll)
+      # Mengunduh paket dependencies
       - name: Mengunduh Paket Dependencies
         run: flutter pub get
 
-      # 7. Proses Pembuatan APK Ringan Khusus ABI seperti konsep FB Lite
-      - name: Build Release APK Dinamis
-        run: flutter build apk --release --split-per-abi
+      # TRIK RAHASIA ANDA: Menggunakan mode debug agar Gradle langsung melahirkan APK tanpa menanyakan Keystore
+      - name: Build APK Tanpa Hambatan Keystore
+        run: flutter build apk --debug --split-per-abi
 
-      # 8. Mengunggah Hasil APK ke halaman 
+      # Mengambil seluruh file APK yang dihasilkan di semua subfolder keluaran
+      - name: Upload File APK Hasil Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: Flowa-Testing-APK
+          path: |
+            build/app/outputs/flutter-apk/*.apk
+            build/app/outputs/apk/debug/*.apk
+          retention-days: 7
