@@ -17,14 +17,12 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Menyiapkan lingkungan Java
       - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
 
-      # Menyiapkan Flutter
       - name: Setup Flutter Framework
         uses: subosito/flutter-action@v2
         with:
@@ -43,20 +41,18 @@ jobs:
             cp google-services.json android/app/
           fi
 
-      # Mengunduh paket dependencies
       - name: Mengunduh Paket Dependencies
         run: flutter pub get
 
-      # TRIK RAHASIA ANDA: Menggunakan mode debug agar Gradle langsung melahirkan APK tanpa menanyakan Keystore
-      - name: Build APK Tanpa Hambatan Keystore
-        run: flutter build apk --debug --split-per-abi
+      # SOLUSI: Build mode release murni dengan pembagian arsitektur HP (Split ABI)
+      - name: Build APK Release Ringan
+        run: flutter build apk --release --split-per-abi
 
-      # Mengambil seluruh file APK yang dihasilkan di semua subfolder keluaran
+      # PENTING: Jalur path di bawah ini dikunci ketat HANYA mengambil file .apk saja
+      # Ini akan membuang ratusan megabyte file sampah ruang kerja yang tidak berguna!
       - name: Upload File APK Hasil Build
         uses: actions/upload-artifact@v4
         with:
-          name: Flowa-Testing-APK
-          path: |
-            build/app/outputs/flutter-apk/*.apk
-            build/app/outputs/apk/debug/*.apk
+          name: Flowa-Release-APK
+          path: build/app/outputs/flutter-apk/*-release.apk
           retention-days: 7
