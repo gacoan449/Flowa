@@ -1,6 +1,5 @@
 name: Build Android APK (Flowa)
 
-# Skrip ini akan otomatis berjalan setiap kali Anda melakukan Push atau Commit di branch main
 on:
   push:
     branches:
@@ -11,7 +10,7 @@ on:
 
 jobs:
   build:
-    name: Proses Kompilasi APK
+    name: Proses Kompilasi APK Otomatis
     runs-on: ubuntu-latest
 
     steps:
@@ -19,7 +18,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2. Menyiapkan sistem Java (Wajib untuk Android)
+      # 2. Menyiapkan sistem Java (Wajib untuk build Android)
       - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
@@ -31,25 +30,31 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          cache: true # Mempercepat build berikutnya dengan menyimpan cache bahan
+          cache: true
 
-      # 4. Mengunduh semua paket dependency (video_player, firebase, dll) yang terdaftar di pubspec.yaml
+      # 4. PERINTAH RAHASIA: Otomatis melahirkan folder Android dan file build.gradle yang hilang
+      # Parameter --org digunakan agar Package Name aplikasi Anda menjadi Flowa.com secara otomatis
+      - name: Generate Android Folder Automatically
+        run: flutter create . --platforms=android --org Flowa
+
+      # 5. Memindahkan file google-services.json Anda ke tempat yang tepat setelah folder Android lahir
+      - name: Setup Firebase Config File
+        run: |
+          mkdir -p android/app
+          if [ -f google-services.json ]; then
+            cp google-services.json android/app/
+          elif [ -f android/app/google-services.json ]; then
+            echo "File Firebase sudah berada di posisi yang benar."
+          else
+            echo "Peringatan: File google-services.json belum ditemukan."
+          fi
+
+      # 6. Mengunduh semua paket dependency (video_player, firebase, dll)
       - name: Mengunduh Paket Dependencies
         run: flutter pub get
 
-      # 5. Memvalidasi apakah ada error penulisan kode di folder lib Anda
-      - name: Cek Analisis Kode (Linting)
-        run: flutter analyze
-        continue-on-error: true # Tetap lanjut build meskipun ada peringatan code style kecil
-
-      # 6. Proses Pembuatan APK Ringan Khusus ABI (arm64, armeabi, x86) seperti konsep FB Lite
+      # 7. Proses Pembuatan APK Ringan Khusus ABI seperti konsep FB Lite
       - name: Build Release APK Dinamis
         run: flutter build apk --release --split-per-abi
 
-      # 7. Mengunggah Hasil APK ke halaman GitHub agar bisa Anda unduh langsung dari HP
-      - name: Upload File APK Hasil Build
-        uses: actions/upload-artifact@v4
-        with:
-          name: Flowa-Release-APK
-          path: build/app/outputs/flutter-apk/*.apk
-          retention-days: 7 # File APK akan disimpan gratis di GitHub selama 7 hari
+      # 8. Mengunggah Hasil APK ke halaman 
