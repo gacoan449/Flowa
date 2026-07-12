@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import '../widgets/interaction_buttons.dart';
 import '../widgets/video_card.dart';
 import '../../providers/video_feed_provider.dart';
-// Import jembatan Firebase yang baru kita buat
 import '../../../../core/services/firebase_service.dart';
+// Import panel komentar pop-up yang sudah dibuat sebelumnya
+import 'comment_sheet.dart';
 
 class VideoFeedScreen extends StatefulWidget {
   const VideoFeedScreen({super.key});
@@ -19,7 +20,6 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
   @override
   void initState() {
     super.initState();
-    // Memulai proses penarikan data dari Firebase saat halaman dibuka
     _videoFuture = FirebaseService.fetchFlowaVideosFromCloud();
   }
 
@@ -30,7 +30,6 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _videoFuture,
         builder: (context, snapshot) {
-          // Tampilkan loading spinner yang rapi saat data sedang ditarik dari Firebase Cloud
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator(color: Colors.purple));
           }
@@ -123,12 +122,29 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
                           final updatedVideo = VideoFeedController.handleLikeAction(videoData: video, isCurrentlyLiked: isLiked);
                           video['likes'] = updatedVideo['likes'];
                         });
-
-                        // Kirim perubahan data langsung ke Firebase Cloud
                         FirebaseService.updateLikeToCloud(videoId, !isLiked);
                       },
-                      onCommentPressed: () {},
-                      onSharePressed: () {},
+                      onCommentPressed: () {
+                        // AKSI POP-UP: Memunculkan kolom komentar dari bawah layar HP
+                        VideoFeedController.logUserEngagement(
+                          videoId: videoId, 
+                          category: video['category'], 
+                          actionType: 'open_comment',
+                        );
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true, // Responsif jika keyboard HP muncul
+                          backgroundColor: Colors.transparent,
+                          builder: (context) => CommentSheet(videoId: videoId),
+                        );
+                      },
+                      onSharePressed: () {
+                        VideoFeedController.logUserEngagement(
+                          videoId: videoId, 
+                          category: video['category'], 
+                          actionType: 'share',
+                        );
+                      },
                     ),
                   ),
                 ],
