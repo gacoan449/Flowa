@@ -10,12 +10,11 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _usernameController = TextEditingController();
-  final _identifierController = TextEditingController(); // Untuk input Nomor HP atau Email warga
+  final _identifierController = TextEditingController(); 
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isLoading = false;
 
-  // FUNGSI ASLI: Mendaftarkan akun warga desa langsung ke Cloud Firestore desapay-10614
   void _handleRegister() async {
     String username = _usernameController.text.trim();
     String account = _identifierController.text.trim();
@@ -33,13 +32,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
-      // Menyimpan data identitas warga baru ke koleksi 'users' di cloud Firebase
       await FirebaseFirestore.instance.collection('users').add({
         'username': username,
         'account': account,
-        'password': password, // Untuk keamanan rilis besok, bagian ini idealnya dikunci via Firebase Auth asli
-        'role': 'user',       // Otomatis dikunci sebagai warga biasa (bukan admin) agar aman!
-        'isVerified': false,  // Belum mendapat centang biru di awal
+        'password': password, 
+        'role': 'user',       
+        'isVerified': false,  
         'createdAt': FieldValue.serverTimestamp(),
       });
 
@@ -47,7 +45,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         const SnackBar(content: Text('Pendaftaran Berhasil! Silakan masuk di halaman utama.')),
       );
 
-      // Kembali ke halaman login setelah berhasil mendaftar
       Navigator.pop(context);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -78,7 +75,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.person_add_alt_1_purple_navigation, size: 70, color: Colors.purple),
+                    // PERBAIKAN: Mengganti ke nama ikon registrasi resmi bawaan Flutter (Icons.person_add_alt_1)
+                    const Icon(Icons.person_add_alt_1, size: 70, color: Colors.purple),
                     const SizedBox(height: 16),
                     const Text(
                       "Buat Akun Baru",
@@ -90,7 +88,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 35),
 
-                    // Input Nama Lengkap / Username
                     TextField(
                       controller: _usernameController,
                       style: const TextStyle(color: Colors.white),
@@ -105,7 +102,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Input Nomor HP / Email
                     TextField(
                       controller: _identifierController,
                       style: const TextStyle(color: Colors.white),
@@ -120,7 +116,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Input Kata Sandi
                     TextField(
                       controller: _passwordController,
                       obscureText: !_isPasswordVisible,
@@ -144,7 +139,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 40),
 
-                    // Tombol Daftar Sekarang
                     SizedBox(
                       width: double.infinity,
                       height: 50,
@@ -155,13 +149,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         onPressed: _handleRegister,
                         child: const Text("Daftar Sekarang", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                  ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
     );
   }
 }
