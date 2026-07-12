@@ -1,0 +1,55 @@
+name: Build Android APK (Flowa)
+
+# Skrip ini akan otomatis berjalan setiap kali Anda melakukan Push atau Commit di branch main
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Proses Kompilasi APK
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Mengambil kode terbaru dari repositori GitHub Anda
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 2. Menyiapkan sistem Java (Wajib untuk Android)
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      # 3. Menyiapkan Framework Flutter versi stabil terbaru
+      - name: Setup Flutter Framework
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true # Mempercepat build berikutnya dengan menyimpan cache bahan
+
+      # 4. Mengunduh semua paket dependency (video_player, firebase, dll) yang terdaftar di pubspec.yaml
+      - name: Mengunduh Paket Dependencies
+        run: flutter pub get
+
+      # 5. Memvalidasi apakah ada error penulisan kode di folder lib Anda
+      - name: Cek Analisis Kode (Linting)
+        run: flutter analyze
+        continue-on-error: true # Tetap lanjut build meskipun ada peringatan code style kecil
+
+      # 6. Proses Pembuatan APK Ringan Khusus ABI (arm64, armeabi, x86) seperti konsep FB Lite
+      - name: Build Release APK Dinamis
+        run: flutter build apk --release --split-per-abi
+
+      # 7. Mengunggah Hasil APK ke halaman GitHub agar bisa Anda unduh langsung dari HP
+      - name: Upload File APK Hasil Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: Flowa-Release-APK
+          path: build/app/outputs/flutter-apk/*.apk
+          retention-days: 7 # File APK akan disimpan gratis di GitHub selama 7 hari
