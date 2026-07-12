@@ -3,7 +3,6 @@ import '../widgets/interaction_buttons.dart';
 import '../widgets/video_card.dart';
 import '../../providers/video_feed_provider.dart';
 import '../../../../core/services/firebase_service.dart';
-// Import panel komentar pop-up yang sudah dibuat sebelumnya
 import 'comment_sheet.dart';
 
 class VideoFeedScreen extends StatefulWidget {
@@ -15,6 +14,7 @@ class VideoFeedScreen extends StatefulWidget {
 
 class _VideoFeedScreenState extends State<VideoFeedScreen> {
   final Map<String, bool> _likedVideosStatus = {};
+  final Map<String, bool> _bookmarkedVideosStatus = {}; // Menyimpan status simpan video di HP
   late Future<List<Map<String, dynamic>>> _videoFuture;
 
   @override
@@ -47,7 +47,15 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
               final video = flowaVideos[index];
               final isAds = video['type'] == 'ads';
               final videoId = video['id'] as String;
+              
+              // Status aktif tombol secara real-time
               final isLiked = _likedVideosStatus[videoId] ?? false;
+              final isBookmarked = _bookmarkedVideosStatus[videoId] ?? false;
+
+              // Ambil data angka awal atau set default jika kosong di cloud database
+              final initialLikes = video['likes'] ?? 0;
+              final initialComments = video['comments'] ?? 0;
+              final initialBookmarks = video['bookmarks'] ?? 15; // Set dummy awal agar menarik dilihat
 
               return Stack(
                 children: [
@@ -110,22 +118,23 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
                     ),
                   ),
 
+                  // PANEL TOMBOL MELAYANG SEBELAH KANAN
                   Positioned(
                     bottom: 40,
                     right: 16,
                     child: InteractionButtons(
-                      likes: video['likes'],
-                      comments: video['comments'],
+                      likes: isLiked ? initialLikes + 1 : initialLikes,
+                      comments: initialComments,
+                      bookmarks: isBookmarked ? initialBookmarks + 1 : initialBookmarks, // Hitungan dinamis bertambah otomatis
+                      isLiked: isLiked,
+                      isBookmarked: isBookmarked,
                       onLikePressed: () {
                         setState(() {
                           _likedVideosStatus[videoId] = !isLiked;
-                          final updatedVideo = VideoFeedController.handleLikeAction(videoData: video, isCurrentlyLiked: isLiked);
-                          video['likes'] = updatedVideo['likes'];
                         });
                         FirebaseService.updateLikeToCloud(videoId, !isLiked);
                       },
                       onCommentPressed: () {
-                        // AKSI POP-UP: Memunculkan kolom komentar dari bawah layar HP
                         VideoFeedController.logUserEngagement(
                           videoId: videoId, 
                           category: video['category'], 
@@ -133,9 +142,21 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
                         );
                         showModalBottomSheet(
                           context: context,
-                          isScrollControlled: true, // Responsif jika keyboard HP muncul
+                          isScrollControlled: true,
                           backgroundColor: Colors.transparent,
                           builder: (context) => CommentSheet(videoId: videoId),
+                        );
+                      },
+                      onBookmarkPressed: () {
+                        // LOGIKA SIMPAN: Mengubah warna ikon menjadi emas dan mencatat poin minat ke Algoritma FYP
+                        setState(() {
+                          _bookmarkedVideosStatus[videoId] = !isBookmarked;
+                        });
+                        
+                        VideoFeedController.logUserEngagement(
+                          videoId: videoId, 
+                          category: video['category'], 
+                          actionType: isBookmarked ? 'unbookmark' : 'bookmark',
                         );
                       },
                       onSharePressed: () {
