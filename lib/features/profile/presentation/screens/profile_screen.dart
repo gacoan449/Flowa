@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+// Import halaman pemutar video agar kotak grid bisa dipencet
+import '../../video_community/presentation/screens/video_feed_screen.dart';
+// Import halaman dashboard admin untuk tombol rahasia Anda
+import '../../admin/presentation/screens/admin_dashboard_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   // Simulasi data pengguna yang sedang dilihat profilnya
@@ -51,22 +55,31 @@ class ProfileScreen extends StatelessWidget {
           children: [
             const SizedBox(height: 20),
             
-            // 1. Foto Profil dengan Indikator Centang Biru (Verified)
-            Stack(
-              alignment: Alignment.bottomRight,
-              children: [
-                CircleAvatar(
-                  radius: 50,
-                  backgroundImage: NetworkImage(_mockUserData['avatarUrl']),
-                  backgroundColor: Colors.grey[200],
-                ),
-                if (_mockUserData['isVerified'])
-                  const CircleAvatar(
-                    radius: 14,
-                    backgroundColor: Colors.blue,
-                    child: Icon(Icons.check, color: Colors.white, size: 16),
+            // 1. Foto Profil dengan Tombol Rahasia Akses Masuk Ruang Admin
+            GestureDetector(
+              onTap: () {
+                // Trik Rahasia Pemilik: Jika foto profil diklik, langsung arahkan ke Dashboard Pengawasan Admin
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
+                );
+              },
+              child: Stack(
+                alignment: Alignment.bottomRight,
+                children: [
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundImage: NetworkImage(_mockUserData['avatarUrl']),
+                    backgroundColor: Colors.grey,
                   ),
-              ],
+                  if (_mockUserData['isVerified'])
+                    const CircleAvatar(
+                      radius: 14,
+                      backgroundColor: Colors.blue,
+                      child: Icon(Icons.check, color: Colors.white, size: 16),
+                    ),
+                ],
+              ),
             ),
             const SizedBox(height: 15),
 
@@ -76,7 +89,7 @@ class ProfileScreen extends StatelessWidget {
               child: Text(
                 _mockUserData['bio'],
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                style: const TextStyle(color: Colors.grey, fontSize: 14),
               ),
             ),
             const SizedBox(height: 25),
@@ -94,7 +107,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 30),
 
-            // 4. Tombol Aksi (Edit Profil / Ikuti)
+            // 4. Tombol Aksi (Edit Profil)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: SizedBox(
@@ -117,53 +130,62 @@ class ProfileScreen extends StatelessWidget {
 
             const Divider(height: 1, thickness: 1),
 
-            // 5. Bagian Grid Video (Hanya Muncul Jika Pengguna Adalah Konten Kreator)
+            // 5. Bagian Grid Video (Sudah Responsif Bisa Dipencet)
             if (isCreator) ...[
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: GridView.builder(
                   shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(), // Agar scroll menyatu dengan halaman utama
+                  physics: const NeverScrollableScrollPhysics(), // Agar scroll menyatu smooth dengan halaman utama
                   itemCount: _mockThumbnails.length,
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3, // Menampilkan 3 kolom grid kesamping ala Instagram
+                    crossAxisCount: 3, // Menampilkan 3 kolom grid kesamping ala Instagram/TikTok
                     crossAxisSpacing: 4,
                     mainAxisSpacing: 4,
-                    childAspectRatio: 3 / 4, // Rasio vertikal mirip thumbnail video
+                    childAspectRatio: 3 / 4, // Rasio vertikal mirip thumbnail video nyata
                   ),
                   itemBuilder: (context, index) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        image: DecorationImage(
-                          image: NetworkImage(_mockThumbnails[index]),
-                          fit: BoxFit.cover,
+                    return GestureDetector(
+                      onTap: () {
+                        // AKSI NYATA: Saat kotak video di-klik, otomatis beralih ke halaman pemutar video utama (FYP)
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const VideoFeedScreen()),
+                        );
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey,
+                          image: DecorationImage(
+                            image: NetworkImage(_mockThumbnails[index]),
+                            fit: BoxFit.cover,
+                          ),
                         ),
-                      ),
-                      child: const Stack(
-                        children: [
-                          Positioned(
-                            bottom: 5,
-                            left: 5,
-                            child: Row(
-                              children: [
-                                Icon(Icons.play_arrow, color: Colors.white, size: 16),
-                                SizedBox(width: 2),
-                                Text(
-                                  "12K", // Simulasi jumlah views video
-                                  style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                          )
-                        ],
+                        child: const Stack(
+                          children: [
+                            Positioned(
+                              bottom: 5,
+                              left: 5,
+                              child: Row(
+                                children: [
+                                  Icon(Icons.play_arrow, color: Colors.white, size: 16),
+                                  SizedBox(width: 2),
+                                  Text(
+                                    "12K", // Simulasi jumlah views video
+                                    style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            )
+                          ],
+                        ),
                       ),
                     );
                   },
                 ),
               ),
             ] else ...[
-              // Jika user biasa dan belum punya konten
+              // Jika user biasa dan belum punya kiriman konten video
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 60),
                 child: Column(
