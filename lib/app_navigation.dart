@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flowa/features/video_community/presentation/screens/video_feed_screen.dart';
-import 'package:flowa/features/video_community/presentation/screens/friends_screen.dart'; // Menu baru
+import 'package:flowa/features/video_community/presentation/screens/friends_screen.dart';
 import 'package:flowa/features/video_community/presentation/screens/upload_video_screen.dart';
-import 'package:flowa/features/video_community/presentation/screens/inbox_screen.dart';   // Menu baru
+import 'package:flowa/features/video_community/presentation/screens/inbox_screen.dart';
 import 'package:flowa/features/profile/presentation/screens/profile_screen.dart';
 
 class AppNavigation extends StatefulWidget {
@@ -22,13 +22,12 @@ class _AppNavigationState extends State<AppNavigation> {
     final String currentRole = widget.overrideRole;
     final isCreatorOrAdmin = currentRole == 'creator' || currentRole == 'admin';
 
-    // STRUKTUR 5 HALAMAN: Menyusun list halaman utama secara runtut ala TikTok
     final List<Widget> screens = [
-      const VideoFeedScreen(),     // Indeks 0: Beranda FYP
-      const FriendsScreen(),       // Indeks 1: Teman
-      if (isCreatorOrAdmin) const UploadVideoScreen(), // Indeks 2: Ngonten (Hanya tampil jika Admin/Kreator)
-      const InboxScreen(),         // Indeks 3: Kotak Masuk
-      ProfileScreen(userRole: currentRole), // Indeks 4: Profil
+      const VideoFeedScreen(),
+      const FriendsScreen(),
+      if (isCreatorOrAdmin) const UploadVideoScreen(), 
+      const InboxScreen(),
+      ProfileScreen(userRole: currentRole), 
     ];
 
     return Scaffold(
@@ -44,7 +43,7 @@ class _AppNavigationState extends State<AppNavigation> {
           });
         },
         backgroundColor: Colors.black,
-        selectedItemColor: Colors.amber, // Warna emas khas DesaPay untuk menu aktif
+        selectedItemColor: Colors.amber, 
         unselectedItemColor: Colors.white60,
         type: BottomNavigationBarType.fixed,
         selectedFontSize: 11,
@@ -59,7 +58,6 @@ class _AppNavigationState extends State<AppNavigation> {
             label: 'Teman',
           ),
           
-          // TOMBOL "+" ICONIK TIKTOK: Hanya disisipkan jika akun adalah Admin/Kreator
           if (isCreatorOrAdmin)
             BottomNavigationBarItem(
               icon: Stack(
@@ -79,7 +77,8 @@ class _AppNavigationState extends State<AppNavigation> {
                       width: 41,
                       height: 28,
                       decoration: BoxDecoration(
-                        color: Colors.magenta,
+                        // PERBAIKAN: Mengganti Colors.magenta menjadi Colors.pink resmi bawaan Flutter
+                        color: Colors.pink,
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
@@ -95,7 +94,7 @@ class _AppNavigationState extends State<AppNavigation> {
                   ),
                 ],
               ),
-              label: '', // TikTok mengosongkan teks label pada tombol tengah "+"
+              label: '',
             ),
             
           const BottomNavigationBarItem(
