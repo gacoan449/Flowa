@@ -9,15 +9,26 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
+  final _identifierController = TextEditingController(); // Bisa diisi Nomor HP atau Email
   final _passwordController = TextEditingController();
+  bool _isPasswordVisible = false;
 
-  void _handleGoogleLogin() {
-    // Simulasi klik login pakai Google ala YouTube
+  void _handleLogin() {
+    String account = _identifierController.text.trim();
+    String password = _passwordController.text.trim();
+
+    if (account.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nomor HP/Email dan Kata Sandi tidak boleh kosong!')),
+      );
+      return;
+    }
+
+    // Simulasi Validasi Masuk Aplikasi
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Menghubungkan ke Akun Google...')),
+      SnackBar(content: Text('Selamat datang kembali, $account!')),
     );
-    // Langsung arahkan ke halaman utama aplikasi setelah sukses
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => const AppNavigation()),
@@ -27,7 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Tema gelap pekat
+      backgroundColor: Colors.black,
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Center(
@@ -35,7 +46,6 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo Aplikasi Flowa
                 const Icon(Icons.play_circle_fill, size: 80, color: Colors.purple),
                 const SizedBox(height: 12),
                 const Text(
@@ -43,66 +53,32 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 1.5),
                 ),
                 const Text(
-                  "Aliran video tanpa batas",
+                  "Wadah kumpul & ngonten video warga desa",
                   style: TextStyle(color: Colors.white54, fontSize: 14),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 40),
 
-                // Tombol Utama: Login Lewat Google (Gaya YouTube)
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.white30),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-                      backgroundColor: Colors.white10,
-                    ),
-                    icon: const Icon(Icons.g_mobiledata, color: Colors.amber, size: 30),
-                    label: const Text(
-                      "Masuk dengan Google",
-                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-                    ),
-                    onPressed: _handleGoogleLogin,
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Garis Pemisah "atau" (Sudah Diperbaiki Total)
-                const Row(
-                  children: [
-                    Expanded(child: Divider(color: Colors.white24)),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        "atau",
-                        style: TextStyle(color: Colors.white38),
-                      ),
-                    ),
-                    Expanded(child: Divider(color: Colors.white24)),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // Input Email Mandiri
+                // Input Nomor HP atau Email (Persis Gaya DesaPay)
                 TextField(
-                  controller: _emailController,
+                  controller: _identifierController,
                   style: const TextStyle(color: Colors.white),
+                  keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
-                    hintText: "Email",
+                    hintText: "Nomor HP atau Email",
                     hintStyle: const TextStyle(color: Colors.white38),
                     filled: true,
                     fillColor: Colors.white10,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    prefixIcon: const Icon(Icons.email_outlined, color: Colors.white54),
+                    prefixIcon: const Icon(Icons.phone_android_outlined, color: Colors.white54),
                   ),
                 ),
                 const SizedBox(height: 16),
 
-                // Input Password
+                // Input Kata Sandi dengan Tombol Intip (Eye Icon)
                 TextField(
                   controller: _passwordController,
-                  obscureText: true,
+                  obscureText: !_isPasswordVisible,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     hintText: "Kata Sandi",
@@ -111,11 +87,29 @@ class _LoginScreenState extends State<LoginScreen> {
                     fillColor: Colors.white10,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                     prefixIcon: const Icon(Icons.lock_outline, color: Colors.white54),
+                    suffixIcon: IconButton(
+                      icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.white54),
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        });
+                      },
+                    ),
                   ),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 12),
 
-                // Tombol Masuk Biasa
+                // Lupa Sandi
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {},
+                    child: const Text("Lupa Kata Sandi?", style: TextStyle(color: Colors.amber)),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Tombol Masuk Utama
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -124,14 +118,24 @@ class _LoginScreenState extends State<LoginScreen> {
                       backgroundColor: Colors.purple,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => const AppNavigation()),
-                      );
-                    },
+                    onPressed: _handleLogin,
                     child: const Text("Masuk", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
+                ),
+                const SizedBox(height: 20),
+
+                // Tombol Pendaftaran Akun Baru
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text("Belum punya akun Flowa? ", style: TextStyle(color: Colors.white54)),
+                    GestureDetector(
+                      onTap: () {
+                        // Aksi buka halaman daftar
+                      },
+                      child: const Text("Daftar Sekarang", style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
                 ),
               ],
             ),
