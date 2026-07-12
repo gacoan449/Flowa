@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-// Import semua halaman yang sudah kita buat sebelumnya
 import 'features/video_community/presentation/screens/video_feed_screen.dart';
 import 'features/video_community/presentation/screens/upload_video_screen.dart';
 import 'features/profile/presentation/screens/profile_screen.dart';
@@ -14,19 +13,23 @@ class AppNavigation extends StatefulWidget {
 class _AppNavigationState extends State<AppNavigation> {
   int _currentIndex = 0;
 
-  // Daftar halaman yang dihubungkan oleh Navigasi Bawah
-  final List<Widget> _screens = [
-    const VideoFeedScreen(),  // Indeks 0: Halaman FYP Video
-    const UploadVideoScreen(), // Indeks 1: Halaman Unggah Konten (Kreator)
-    ProfileScreen(),          // Indeks 2: Halaman Profil
-  ];
+  // SAKELAR SIMULASI AKUN: 
+  // Ganti 'user' jika ingin tes tampilan warga biasa, ganti 'creator' jika ingin tes tampilan artis/kreator
+  final String _userRole = 'creator'; 
 
   @override
   Widget build(BuildContext context) {
+    // 1. Logika pemisahan halaman berdasarkan Role Pengguna
+    final List<Widget> screens = [
+      const VideoFeedScreen(),
+      if (_userRole == 'creator') const UploadVideoScreen(), // Tombol upload hanya dimasukkan jika dia kreator
+      ProfileScreen(userRole: _userRole), // Mengirim info role ke halaman profil
+    ];
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: _screens, // Menjaga state halaman agar tidak memuat ulang dari nol saat berpindah menu
+        children: screens,
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
@@ -35,29 +38,31 @@ class _AppNavigationState extends State<AppNavigation> {
             _currentIndex = index;
           });
         },
-        backgroundColor: Colors.black, // Background hitam elegan mirip TikTok/FB Watch
-        selectedItemColor: Colors.amber, // Warna menu aktif (khas emas DesaPay)
-        unselectedItemColor: Colors.white60, // Warna menu tidak aktif
-        showSelectedLabels: true,
-        showUnselectedLabels: true,
+        backgroundColor: Colors.black,
+        selectedItemColor: Colors.amber,
+        unselectedItemColor: Colors.white60,
         type: BottomNavigationBarType.fixed,
         items: [
           const BottomNavigationBarItem(
             icon: Icon(Icons.home_filled, size: 26),
             label: 'Beranda',
           ),
-          BottomNavigationBarItem(
-            icon: Container(
-              width: 45,
-              height: 30,
-              decoration: BoxDecoration(
-                color: Colors.purple, // Warna ungu khas Flowa
-                borderRadius: BorderRadius.circular(8),
+          
+          // 2. Logika menyembunyikan tombol "+" khusus di HP penonton biasa
+          if (_userRole == 'creator')
+            BottomNavigationBarItem(
+              icon: Container(
+                width: 45,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: Colors.purple,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.add, color: Colors.white, size: 22),
               ),
-              child: const Icon(Icons.add, color: Colors.white, size: 22),
+              label: 'Ngonten',
             ),
-            label: 'Ngonten',
-          ),
+            
           const BottomNavigationBarItem(
             icon: Icon(Icons.person, size: 26),
             label: 'Profil',
