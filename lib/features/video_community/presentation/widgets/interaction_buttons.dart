@@ -3,16 +3,24 @@ import 'package:flutter/material.dart';
 class InteractionButtons extends StatelessWidget {
   final int likes;
   final int comments;
+  final int bookmarks; // Parameter baru untuk hitungan simpan
+  final bool isLiked;
+  final bool isBookmarked; // Parameter baru untuk status warna simpan
   final VoidCallback onLikePressed;
   final VoidCallback onCommentPressed;
+  final VoidCallback onBookmarkPressed; // Callback baru
   final VoidCallback onSharePressed;
 
   const InteractionButtons({
     super.key,
     required this.likes,
     required this.comments,
+    required this.bookmarks,
+    required this.isLiked,
+    required this.isBookmarked,
     required this.onLikePressed,
     required this.onCommentPressed,
+    required this.onBookmarkPressed,
     required this.onSharePressed,
   });
 
@@ -21,14 +29,14 @@ class InteractionButtons extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Tombol Like
+        // Tombol Like (Suka)
         _buildIconButton(
           icon: Icons.favorite,
           label: likes.toString(),
-          color: Colors.red,
+          color: isLiked ? Colors.red : Colors.white,
           onTap: onLikePressed,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
         
         // Tombol Komentar
         _buildIconButton(
@@ -37,9 +45,18 @@ class InteractionButtons extends StatelessWidget {
           color: Colors.white,
           onTap: onCommentPressed,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
+
+        // TOMBOL BARU: Bookmark / Simpan Video ala TikTok (Menarik & Interaktif)
+        _buildIconButton(
+          icon: isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+          label: bookmarks.toString(),
+          color: isBookmarked ? Colors.amber : Colors.white, // Berubah jadi Emas DesaPay saat disimpan
+          onTap: onBookmarkPressed,
+        ),
+        const SizedBox(height: 18),
         
-        // Tombol Share / Bagikan
+        // Tombol Share (Bagikan)
         _buildIconButton(
           icon: Icons.share,
           label: "Bagikan",
@@ -60,11 +77,11 @@ class InteractionButtons extends StatelessWidget {
       onTap: onTap,
       child: Column(
         children: [
-          Icon(icon, color: color, size: 35),
+          Icon(icon, color: color, size: 36),
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
           ),
         ],
       ),
