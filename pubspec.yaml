@@ -10,11 +10,11 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Paket Lengkap Koneksi Server Database Firebase Proyek Anda (desapay-10614)
+  # PERBAIKAN: Paket Koneksi Server Database Firebase yang Sudah Diselaraskan (Bebas Bentrok!)
   firebase_core: ^3.0.0
   firebase_auth: ^5.0.0
   cloud_firestore: ^5.0.0
-  firebase_storage: ^11.0.0 # Paket Baru Penyimpanan Berkas Fisik Video
+  firebase_storage: ^12.4.10 # <-- Diubah ke versi mutakhir sesuai saran sistem Flutter
 
   # Paket Utama untuk Fitur Utama Flowa (Kreator & Video)
   video_player: ^2.9.2
