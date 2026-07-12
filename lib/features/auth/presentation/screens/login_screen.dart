@@ -68,13 +68,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 24),
 
+                // Garis Pemisah "atau" (Sudah Diperbaiki Total)
                 const Row(
                   children: [
                     Expanded(child: Divider(color: Colors.white24)),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
-                      style: TextStyle(color: Colors.white38),
-                      child: Text("atau"),
+                      child: Text(
+                        "atau",
+                        style: TextStyle(color: Colors.white38),
+                      ),
                     ),
                     Expanded(child: Divider(color: Colors.white24)),
                   ],
