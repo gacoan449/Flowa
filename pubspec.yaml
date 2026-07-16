@@ -20,6 +20,14 @@ dependencies:
   video_player: ^2.9.2
   image_picker: ^1.1.2
 
+  # ==========================================
+  # [UPGRADE CTO] PAKET PREMIUM & STATE MANAGEMENT
+  # ==========================================
+  provider: ^6.1.2             # WAJIB: Untuk menjalankan video_feed_provider.dart Anda
+  cached_network_image: ^3.3.1 # WAJIB: Caching gambar/thumbnail agar aplikasi tidak lag
+  google_fonts: ^6.2.1         # UI MEWAH: Tipografi bersih dan modern tanpa repot atur aset font
+  cupertino_icons: ^1.0.6      # Standar ikonografi UI modern
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
