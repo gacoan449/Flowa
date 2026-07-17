@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/interaction_buttons.dart';
 import '../widgets/video_card.dart';
-import '../controllers/video_feed_controller.dart'; // [UPGRADE] Import Controller
+import '../widgets/video_feed_controller.dart'; // [PERBAIKAN PATH] Menyesuaikan letak file sesuai gambar terbaru Anda
 import '../../providers/video_feed_provider.dart';
 import '../../../../core/services/firebase_service.dart';
 import 'comment_sheet.dart';
@@ -67,6 +67,7 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
               final video = flowaVideos[index];
               final isAds = video['type'] == 'ads';
               final videoId = video['id'] as String;
+              final videoCategory = video['category']?.toString() ?? 'general'; // Mengamankan parameter category
               
               final isLiked = _likedVideosStatus[videoId] ?? false;
               final isBookmarked = _bookmarkedVideosStatus[videoId] ?? false;
@@ -112,7 +113,12 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
                           icon: const Icon(Icons.shopping_bag_rounded, size: 20),
                           label: const Text("Buka Aplikasi DesaPay", style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
                           onPressed: () {
-                            VideoFeedController.logUserEngagement(videoId: videoId, actionType: 'click_ads');
+                            // [PERBAIKAN] Menambahkan parameter category yang diwajibkan oleh kompiler
+                            VideoFeedController.logUserEngagement(
+                              videoId: videoId, 
+                              category: videoCategory,
+                              actionType: 'click_ads',
+                            );
                           },
                         ),
                       ),
@@ -123,7 +129,7 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
                     left: 16,
                     right: 80,
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      cross CrossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text("@${video['creator']}", style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold, shadows: [Shadow(color: Colors.black54, blurRadius: 4, offset: Offset(1, 1))])),
@@ -145,10 +151,21 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
                       onLikePressed: () {
                         setState(() { _likedVideosStatus[videoId] = !isLiked; });
                         FirebaseService.updateLikeToCloud(videoId, !isLiked);
-                        VideoFeedController.logUserEngagement(videoId: videoId, actionType: !isLiked ? 'like' : 'unlike');
+                        
+                        // [PERBAIKAN] Menambahkan parameter category yang diwajibkan oleh kompiler
+                        VideoFeedController.logUserEngagement(
+                          videoId: videoId, 
+                          category: videoCategory,
+                          actionType: !isLiked ? 'like' : 'unlike',
+                        );
                       },
                       onCommentPressed: () {
-                        VideoFeedController.logUserEngagement(videoId: videoId, actionType: 'open_comment');
+                        // [PERBAIKAN] Menambahkan parameter category yang diwajibkan oleh kompiler
+                        VideoFeedController.logUserEngagement(
+                          videoId: videoId, 
+                          category: videoCategory,
+                          actionType: 'open_comment',
+                        );
                         showModalBottomSheet(
                           context: context,
                           isScrollControlled: true,
@@ -158,10 +175,21 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
                       },
                       onBookmarkPressed: () {
                         setState(() { _bookmarkedVideosStatus[videoId] = !isBookmarked; });
-                        VideoFeedController.logUserEngagement(videoId: videoId, actionType: isBookmarked ? 'unbookmark' : 'bookmark');
+                        
+                        // [PERBAIKAN] Menambahkan parameter category yang diwajibkan oleh kompiler
+                        VideoFeedController.logUserEngagement(
+                          videoId: videoId, 
+                          category: videoCategory,
+                          actionType: isBookmarked ? 'unbookmark' : 'bookmark',
+                        );
                       },
                       onSharePressed: () {
-                        VideoFeedController.logUserEngagement(videoId: videoId, actionType: 'share');
+                        // [PERBAIKAN] Menambahkan parameter category yang diwajibkan oleh kompiler
+                        VideoFeedController.logUserEngagement(
+                          videoId: videoId, 
+                          category: videoCategory,
+                          actionType: 'share',
+                        );
                       },
                     ),
                   ),
