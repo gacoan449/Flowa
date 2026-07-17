@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/interaction_buttons.dart';
 import '../widgets/video_card.dart';
-import '../widgets/video_feed_controller.dart'; // [PERBAIKAN PATH] Menyesuaikan letak file sesuai gambar terbaru Anda
+import '../widgets/video_feed_controller.dart'; // [EVALUASI PATH] Jalur relatif sudah diselaraskan kembali
 import '../../providers/video_feed_provider.dart';
 import '../../../../core/services/firebase_service.dart';
 import 'comment_sheet.dart';
@@ -67,7 +67,7 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
               final video = flowaVideos[index];
               final isAds = video['type'] == 'ads';
               final videoId = video['id'] as String;
-              final videoCategory = video['category']?.toString() ?? 'general'; // Mengamankan parameter category
+              final videoCategory = video['category']?.toString() ?? 'general';
               
               final isLiked = _likedVideosStatus[videoId] ?? false;
               final isBookmarked = _bookmarkedVideosStatus[videoId] ?? false;
@@ -113,7 +113,6 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
                           icon: const Icon(Icons.shopping_bag_rounded, size: 20),
                           label: const Text("Buka Aplikasi DesaPay", style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
                           onPressed: () {
-                            // [PERBAIKAN] Menambahkan parameter category yang diwajibkan oleh kompiler
                             VideoFeedController.logUserEngagement(
                               videoId: videoId, 
                               category: videoCategory,
@@ -129,7 +128,8 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
                     left: 16,
                     right: 80,
                     child: Column(
-                      cross CrossAxisAlignment: CrossAxisAlignment.start,
+                      // [PERBAIKAN TYPO] Sintaks penulisan alignment Column telah dibersihkan total
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text("@${video['creator']}", style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold, shadows: [Shadow(color: Colors.black54, blurRadius: 4, offset: Offset(1, 1))])),
@@ -152,7 +152,6 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
                         setState(() { _likedVideosStatus[videoId] = !isLiked; });
                         FirebaseService.updateLikeToCloud(videoId, !isLiked);
                         
-                        // [PERBAIKAN] Menambahkan parameter category yang diwajibkan oleh kompiler
                         VideoFeedController.logUserEngagement(
                           videoId: videoId, 
                           category: videoCategory,
@@ -160,7 +159,6 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
                         );
                       },
                       onCommentPressed: () {
-                        // [PERBAIKAN] Menambahkan parameter category yang diwajibkan oleh kompiler
                         VideoFeedController.logUserEngagement(
                           videoId: videoId, 
                           category: videoCategory,
@@ -176,7 +174,6 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
                       onBookmarkPressed: () {
                         setState(() { _bookmarkedVideosStatus[videoId] = !isBookmarked; });
                         
-                        // [PERBAIKAN] Menambahkan parameter category yang diwajibkan oleh kompiler
                         VideoFeedController.logUserEngagement(
                           videoId: videoId, 
                           category: videoCategory,
@@ -184,7 +181,6 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
                         );
                       },
                       onSharePressed: () {
-                        // [PERBAIKAN] Menambahkan parameter category yang diwajibkan oleh kompiler
                         VideoFeedController.logUserEngagement(
                           videoId: videoId, 
                           category: videoCategory,
