@@ -1,14 +1,15 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart'; // Import baru
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart'; // [UPGRADE] Menggunakan debugPrint
 
 class FirebaseService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static final FirebaseAuth _auth = FirebaseAuth.instance;
-  static final FirebaseStorage _storage = FirebaseStorage.instance; // Instance baru
+  static final FirebaseStorage _storage = FirebaseStorage.instance;
 
-  // 1. KONEKSI ASLI: Mengambil daftar video dari Firestore Cloud
+  // 1. KONEKSI ASLI: Mengambil daftar video (diurutkan berdasarkan waktu)
   static Future<List<Map<String, dynamic>>> fetchFlowaVideosFromCloud() async {
     try {
       QuerySnapshot snapshot = await _firestore
@@ -28,50 +29,55 @@ class FirebaseService {
           "likes": data['likes'] ?? 0,
           "comments": data['comments'] ?? 0,
           "bookmarks": data['bookmarks'] ?? 0,
+          "isSponsored": data['isSponsored'] ?? false, // [UPGRADE] Flag Iklan
         };
       }).toList();
     } catch (e) {
-      print("ERROR_FIREBASE_FETCH: $e");
+      debugPrint("ERROR_FIREBASE_FETCH: $e");
       return [];
     }
   }
 
-  // 2. FUNGSI SAKTI BARU: Mengunggah Berkas Fisik `.mp4` ke Gudang Cloud Firebase Storage Anda
+  // 2. FUNGSI SAKTI: Unggah Berkas Fisik `.mp4`
   static Future<String?> uploadVideoFileToStorage(File videoFile) async {
     try {
-      // Membuat nama file acak berdasarkan waktu unik agar tidak saling bertabrakan di server
-      String fileName = 'videos/${DateTime.now().millisecondsSinceEpoch}.mp4';
-      
-      // Menunjuk lokasi penyimpanan di Cloud Storage desapay-10614
+      String fileName = 'videos/${_auth.currentUser?.uid ?? 'guest'}_${DateTime.now().millisecondsSinceEpoch}.mp4';
       Reference ref = _storage.ref().child(fileName);
       
-      // Memulai proses pengunggahan berkas digital dari HP ke awan internet
       UploadTask uploadTask = ref.putFile(
         videoFile,
-        SettableMetadata(contentType: 'video/mp4'), // Mengunci ekstensi file sebagai video mp4 bersih
+        SettableMetadata(contentType: 'video/mp4'),
       );
       
-      // Menunggu sampai berkas video selesai terunggah 100%
       TaskSnapshot snapshot = await uploadTask;
-      
-      // Mengambil link URL internet resmi dari video tersebut (Inilah yang nanti diputar warga)
-      String downloadUrl = await snapshot.ref.getDownloadURL();
-      return downloadUrl;
+      return await snapshot.ref.getDownloadURL();
     } catch (e) {
-      print("ERROR_STORAGE_UPLOAD: $e");
+      debugPrint("ERROR_STORAGE_UPLOAD: $e");
       return null;
     }
   }
 
-  // 3. Update jumlah Like secara real-time langsung ke dokumen dokumen di Cloud
+  // 3. FUNGSI MONETISASI: Kreator bisa mengajukan Iklan
+  // [UPGRADE] Admin bisa menyetujui video menjadi 'Sponsored'
+  static Future<void> markVideoAsSponsored(String videoId, bool isSponsored) async {
+    try {
+      await _firestore.collection('flowa_videos').doc(videoId).update({
+        'isSponsored': isSponsored,
+        'type': isSponsored ? 'ads' : 'content',
+      });
+    } catch (e) {
+      debugPrint("ERROR_ADS_MONETIZE: $e");
+    }
+  }
+
+  // 4. Update jumlah Like real-time
   static Future<void> updateLikeToCloud(String videoId, bool isLiked) async {
     try {
-      DocumentReference videoRef = _firestore.collection('flowa_videos').doc(videoId);
-      await videoRef.update({
+      await _firestore.collection('flowa_videos').doc(videoId).update({
         'likes': isLiked ? FieldValue.increment(1) : FieldValue.increment(-1),
       });
     } catch (e) {
-      print("ERROR_FIREBASE_LIKE: $e");
+      debugPrint("ERROR_FIREBASE_LIKE: $e");
     }
   }
 }
