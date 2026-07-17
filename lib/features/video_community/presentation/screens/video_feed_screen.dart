@@ -16,11 +16,22 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
   final Map<String, bool> _likedVideosStatus = {};
   final Map<String, bool> _bookmarkedVideosStatus = {}; // Menyimpan status simpan video di HP
   late Future<List<Map<String, dynamic>>> _videoFuture;
+  
+  // [UPGRADE CTO] Menambahkan PageController untuk mengontrol performa RAM saat scroll
+  late PageController _pageController;
 
   @override
   void initState() {
     super.initState();
+    _pageController = PageController();
     _videoFuture = FirebaseService.fetchFlowaVideosFromCloud();
+  }
+
+  @override
+  void dispose() {
+    // [UPGRADE CTO] Wajib dibersihkan agar RAM HP pengguna tidak penuh saat keluar dari aplikasi
+    _pageController.dispose();
+    super.dispose();
   }
 
   @override
@@ -31,18 +42,38 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
         future: _videoFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Colors.purple));
+            return const Center(
+              child: CircularProgressIndicator(
+                color: Colors.purpleAccent,
+                strokeWidth: 3,
+              ),
+            );
           }
           
           if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text("Gagal memuat video dari server", style: TextStyle(color: Colors.white)));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.wifi_off_rounded, color: Colors.white.withOpacity(0.5), size: 50),
+                  const SizedBox(height: 16),
+                  const Text(
+                    "Gagal memuat video dari server", 
+                    style: TextStyle(color: Colors.white70, fontSize: 16),
+                  ),
+                ],
+              ),
+            );
           }
 
           final flowaVideos = snapshot.data!;
 
           return PageView.builder(
+            controller: _pageController,
             scrollDirection: Axis.vertical,
             itemCount: flowaVideos.length,
+            // [UPGRADE CTO] Membatasi render di luar layar agar scroll lebih mulus
+            allowImplicitScrolling: true, 
             itemBuilder: (context, index) {
               final video = flowaVideos[index];
               final isAds = video['type'] == 'ads';
@@ -55,77 +86,128 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
               // Ambil data angka awal atau set default jika kosong di cloud database
               final initialLikes = video['likes'] ?? 0;
               final initialComments = video['comments'] ?? 0;
-              final initialBookmarks = video['bookmarks'] ?? 15; // Set dummy awal agar menarik dilihat
+              final initialBookmarks = video['bookmarks'] ?? 15;
 
               return Stack(
                 children: [
                   VideoCard(videoUrl: video['videoUrl']),
                   
+                  // Pelindung Visual (Gradient) untuk teks agar selalu terbaca
                   Positioned.fill(
                     child: Container(
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [Colors.transparent, Colors.black54],
+                          colors: [
+                            Colors.black.withOpacity(0.0), 
+                            Colors.black.withOpacity(0.8),
+                          ],
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
-                          stops: [0.7, 1.0],
+                          stops: const [0.6, 1.0],
                         ),
                       ),
                     ),
                   ),
 
+                  // UI IKLAN (ADS) PREMIUM - TAMPILAN KELAS INDUSTRI
                   if (isAds)
                     Positioned(
-                      bottom: 170,
-                      left: 20,
-                      right: 20,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.amber,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        onPressed: () {
-                          VideoFeedController.logUserEngagement(
-                            videoId: videoId, 
-                            category: video['category'], 
-                            actionType: 'click_ads',
-                          );
-                          showDialog(
-                            context: context,
-                            builder: (context) => const AlertDialog(
-                              title: Text("Mengalihkan..."),
-                              content: Text("Membuka Aplikasi Petani Desa Berkah & DesaPay..."),
+                      bottom: 150,
+                      left: 16,
+                      right: 90, // Menghindari tumpang tindih dengan tombol interaksi
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.amber.withOpacity(0.3),
+                              blurRadius: 15,
+                              offset: const Offset(0, 5),
                             ),
-                          );
-                        },
-                        child: const Text("Buka Aplikasi Sekarang", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.amber, // Warna emas DesaPay
+                            foregroundColor: Colors.black, // Warna teks
+                            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          ),
+                          icon: const Icon(Icons.shopping_bag_rounded, size: 20),
+                          label: const Text(
+                            "Buka Aplikasi DesaPay", 
+                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, letterSpacing: 0.5),
+                          ),
+                          onPressed: () {
+                            VideoFeedController.logUserEngagement(
+                              videoId: videoId, 
+                              category: video['category'], 
+                              actionType: 'click_ads',
+                            );
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                backgroundColor: Colors.grey[900],
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                title: const Text("Mengalihkan...", style: TextStyle(color: Colors.white)),
+                                content: const Text(
+                                  "Membuka Ekosistem Petani Desa Berkah & DesaPay...", 
+                                  style: TextStyle(color: Colors.white70),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
 
+                  // AREA CAPTION & USERNAME
                   Positioned(
-                    bottom: 30,
+                    bottom: 24,
                     left: 16,
-                    right: 80,
+                    right: 80, // Menyisakan ruang untuk tombol kanan
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text("@${video['creator']}", style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 6),
-                        Text(video['caption'], style: const TextStyle(color: Colors.white, fontSize: 14), maxLines: 3, overflow: TextOverflow.ellipsis),
+                        Text(
+                          "@${video['creator']}", 
+                          style: const TextStyle(
+                            color: Colors.white, 
+                            fontSize: 17, 
+                            fontWeight: FontWeight.bold,
+                            shadows: [
+                              Shadow(color: Colors.black54, blurRadius: 4, offset: Offset(1, 1))
+                            ],
+                          )
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          video['caption'], 
+                          style: const TextStyle(
+                            color: Colors.white, 
+                            fontSize: 14, 
+                            height: 1.3,
+                            shadows: [
+                              Shadow(color: Colors.black54, blurRadius: 4, offset: Offset(1, 1))
+                            ],
+                          ), 
+                          maxLines: 3, 
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ],
                     ),
                   ),
 
                   // PANEL TOMBOL MELAYANG SEBELAH KANAN
                   Positioned(
-                    bottom: 40,
-                    right: 16,
+                    bottom: 24,
+                    right: 12,
                     child: InteractionButtons(
                       likes: isLiked ? initialLikes + 1 : initialLikes,
                       comments: initialComments,
-                      bookmarks: isBookmarked ? initialBookmarks + 1 : initialBookmarks, // Hitungan dinamis bertambah otomatis
+                      bookmarks: isBookmarked ? initialBookmarks + 1 : initialBookmarks,
                       isLiked: isLiked,
                       isBookmarked: isBookmarked,
                       onLikePressed: () {
@@ -143,12 +225,11 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
                         showModalBottomSheet(
                           context: context,
                           isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
+                          backgroundColor: Colors.transparent, // Transparan agar CommentSheet bisa memiliki sudut melengkung
                           builder: (context) => CommentSheet(videoId: videoId),
                         );
                       },
                       onBookmarkPressed: () {
-                        // LOGIKA SIMPAN: Mengubah warna ikon menjadi emas dan mencatat poin minat ke Algoritma FYP
                         setState(() {
                           _bookmarkedVideosStatus[videoId] = !isBookmarked;
                         });
