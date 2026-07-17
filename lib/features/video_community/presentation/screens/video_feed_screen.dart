@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/interaction_buttons.dart';
 import '../widgets/video_card.dart';
+import '../controllers/video_feed_controller.dart'; // [UPGRADE] Import Controller
 import '../../providers/video_feed_provider.dart';
 import '../../../../core/services/firebase_service.dart';
 import 'comment_sheet.dart';
@@ -14,10 +15,8 @@ class VideoFeedScreen extends StatefulWidget {
 
 class _VideoFeedScreenState extends State<VideoFeedScreen> {
   final Map<String, bool> _likedVideosStatus = {};
-  final Map<String, bool> _bookmarkedVideosStatus = {}; // Menyimpan status simpan video di HP
+  final Map<String, bool> _bookmarkedVideosStatus = {};
   late Future<List<Map<String, dynamic>>> _videoFuture;
-  
-  // [UPGRADE CTO] Menambahkan PageController untuk mengontrol performa RAM saat scroll
   late PageController _pageController;
 
   @override
@@ -29,7 +28,6 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
 
   @override
   void dispose() {
-    // [UPGRADE CTO] Wajib dibersihkan agar RAM HP pengguna tidak penuh saat keluar dari aplikasi
     _pageController.dispose();
     super.dispose();
   }
@@ -42,12 +40,7 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
         future: _videoFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(
-                color: Colors.purpleAccent,
-                strokeWidth: 3,
-              ),
-            );
+            return const Center(child: CircularProgressIndicator(color: Colors.purpleAccent, strokeWidth: 3));
           }
           
           if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
@@ -57,10 +50,7 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
                 children: [
                   Icon(Icons.wifi_off_rounded, color: Colors.white.withOpacity(0.5), size: 50),
                   const SizedBox(height: 16),
-                  const Text(
-                    "Gagal memuat video dari server", 
-                    style: TextStyle(color: Colors.white70, fontSize: 16),
-                  ),
+                  const Text("Gagal memuat video", style: TextStyle(color: Colors.white70, fontSize: 16)),
                 ],
               ),
             );
@@ -72,18 +62,15 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
             controller: _pageController,
             scrollDirection: Axis.vertical,
             itemCount: flowaVideos.length,
-            // [UPGRADE CTO] Membatasi render di luar layar agar scroll lebih mulus
             allowImplicitScrolling: true, 
             itemBuilder: (context, index) {
               final video = flowaVideos[index];
               final isAds = video['type'] == 'ads';
               final videoId = video['id'] as String;
               
-              // Status aktif tombol secara real-time
               final isLiked = _likedVideosStatus[videoId] ?? false;
               final isBookmarked = _bookmarkedVideosStatus[videoId] ?? false;
 
-              // Ambil data angka awal atau set default jika kosong di cloud database
               final initialLikes = video['likes'] ?? 0;
               final initialComments = video['comments'] ?? 0;
               final initialBookmarks = video['bookmarks'] ?? 15;
@@ -92,15 +79,11 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
                 children: [
                   VideoCard(videoUrl: video['videoUrl']),
                   
-                  // Pelindung Visual (Gradient) untuk teks agar selalu terbaca
                   Positioned.fill(
                     child: Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [
-                            Colors.black.withOpacity(0.0), 
-                            Colors.black.withOpacity(0.8),
-                          ],
+                          colors: [Colors.black.withOpacity(0.0), Colors.black.withOpacity(0.8)],
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           stops: const [0.6, 1.0],
@@ -109,98 +92,47 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
                     ),
                   ),
 
-                  // UI IKLAN (ADS) PREMIUM - TAMPILAN KELAS INDUSTRI
                   if (isAds)
                     Positioned(
                       bottom: 150,
                       left: 16,
-                      right: 90, // Menghindari tumpang tindih dengan tombol interaksi
+                      right: 90,
                       child: Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.amber.withOpacity(0.3),
-                              blurRadius: 15,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
+                          boxShadow: [BoxShadow(color: Colors.amber.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 5))],
                         ),
                         child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.amber, // Warna emas DesaPay
-                            foregroundColor: Colors.black, // Warna teks
+                            backgroundColor: Colors.amber,
+                            foregroundColor: Colors.black,
                             padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                            elevation: 0,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           ),
                           icon: const Icon(Icons.shopping_bag_rounded, size: 20),
-                          label: const Text(
-                            "Buka Aplikasi DesaPay", 
-                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, letterSpacing: 0.5),
-                          ),
+                          label: const Text("Buka Aplikasi DesaPay", style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
                           onPressed: () {
-                            VideoFeedController.logUserEngagement(
-                              videoId: videoId, 
-                              category: video['category'], 
-                              actionType: 'click_ads',
-                            );
-                            showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                backgroundColor: Colors.grey[900],
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                title: const Text("Mengalihkan...", style: TextStyle(color: Colors.white)),
-                                content: const Text(
-                                  "Membuka Ekosistem Petani Desa Berkah & DesaPay...", 
-                                  style: TextStyle(color: Colors.white70),
-                                ),
-                              ),
-                            );
+                            VideoFeedController.logUserEngagement(videoId: videoId, actionType: 'click_ads');
                           },
                         ),
                       ),
                     ),
 
-                  // AREA CAPTION & USERNAME
                   Positioned(
                     bottom: 24,
                     left: 16,
-                    right: 80, // Menyisakan ruang untuk tombol kanan
+                    right: 80,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          "@${video['creator']}", 
-                          style: const TextStyle(
-                            color: Colors.white, 
-                            fontSize: 17, 
-                            fontWeight: FontWeight.bold,
-                            shadows: [
-                              Shadow(color: Colors.black54, blurRadius: 4, offset: Offset(1, 1))
-                            ],
-                          )
-                        ),
+                        Text("@${video['creator']}", style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold, shadows: [Shadow(color: Colors.black54, blurRadius: 4, offset: Offset(1, 1))])),
                         const SizedBox(height: 8),
-                        Text(
-                          video['caption'], 
-                          style: const TextStyle(
-                            color: Colors.white, 
-                            fontSize: 14, 
-                            height: 1.3,
-                            shadows: [
-                              Shadow(color: Colors.black54, blurRadius: 4, offset: Offset(1, 1))
-                            ],
-                          ), 
-                          maxLines: 3, 
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        Text(video['caption'], style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.3, shadows: [Shadow(color: Colors.black54, blurRadius: 4, offset: Offset(1, 1))]), maxLines: 3, overflow: TextOverflow.ellipsis),
                       ],
                     ),
                   ),
 
-                  // PANEL TOMBOL MELAYANG SEBELAH KANAN
                   Positioned(
                     bottom: 24,
                     right: 12,
@@ -211,41 +143,25 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
                       isLiked: isLiked,
                       isBookmarked: isBookmarked,
                       onLikePressed: () {
-                        setState(() {
-                          _likedVideosStatus[videoId] = !isLiked;
-                        });
+                        setState(() { _likedVideosStatus[videoId] = !isLiked; });
                         FirebaseService.updateLikeToCloud(videoId, !isLiked);
+                        VideoFeedController.logUserEngagement(videoId: videoId, actionType: !isLiked ? 'like' : 'unlike');
                       },
                       onCommentPressed: () {
-                        VideoFeedController.logUserEngagement(
-                          videoId: videoId, 
-                          category: video['category'], 
-                          actionType: 'open_comment',
-                        );
+                        VideoFeedController.logUserEngagement(videoId: videoId, actionType: 'open_comment');
                         showModalBottomSheet(
                           context: context,
                           isScrollControlled: true,
-                          backgroundColor: Colors.transparent, // Transparan agar CommentSheet bisa memiliki sudut melengkung
+                          backgroundColor: Colors.transparent,
                           builder: (context) => CommentSheet(videoId: videoId),
                         );
                       },
                       onBookmarkPressed: () {
-                        setState(() {
-                          _bookmarkedVideosStatus[videoId] = !isBookmarked;
-                        });
-                        
-                        VideoFeedController.logUserEngagement(
-                          videoId: videoId, 
-                          category: video['category'], 
-                          actionType: isBookmarked ? 'unbookmark' : 'bookmark',
-                        );
+                        setState(() { _bookmarkedVideosStatus[videoId] = !isBookmarked; });
+                        VideoFeedController.logUserEngagement(videoId: videoId, actionType: isBookmarked ? 'unbookmark' : 'bookmark');
                       },
                       onSharePressed: () {
-                        VideoFeedController.logUserEngagement(
-                          videoId: videoId, 
-                          category: video['category'], 
-                          actionType: 'share',
-                        );
+                        VideoFeedController.logUserEngagement(videoId: videoId, actionType: 'share');
                       },
                     ),
                   ),
