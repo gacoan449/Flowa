@@ -9,11 +9,19 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    // Inisialisasi Otomatis Firebase menggunakan file google-services.json Anda
-    await Firebase.initializeApp();
+    // Inisialisasi Firebase menggunakan opsi data JSON manual untuk Flowa.com
+    await Firebase.initializeApp(
+      options: const FirebaseOptions(
+        apiKey: "AIzaSyB-guTai42pYgcvXeacyt_8fyUpkfxzluA",
+        appId: "1:242778852239:android:1f29dc10d55376eafe99fa",
+        messagingSenderId: "242778852239",
+        projectId: "desapay-10614",
+        storageBucket: "desapay-10614.firebasestorage.app",
+      ),
+    );
   } catch (e) {
     // [UPGRADE CTO] Menggunakan debugPrint standar industri
-    debugPrint("LOG_INITIALIZATION_ERROR: Firebase gagal dimuat. Pastikan file google-services.json sudah berada di folder android/app/. Error: $e");
+    debugPrint("LOG_INITIALIZATION_ERROR: Firebase gagal dimuat. Error: $e");
   }
 
   runApp(const MyApp());
