@@ -6,7 +6,8 @@ import 'package:flowa/features/video_community/presentation/screens/inbox_screen
 import 'package:flowa/features/profile/presentation/screens/profile_screen.dart';
 
 class AppNavigation extends StatefulWidget {
-  final String overrideRole;
+  // overrideRole tetap diterima untuk keperluan admin, tapi tidak lagi memblokir fitur upload warga
+  final String overrideRole; 
   
   const AppNavigation({super.key, required this.overrideRole});
 
@@ -19,27 +20,20 @@ class _AppNavigationState extends State<AppNavigation> {
 
   @override
   Widget build(BuildContext context) {
-    final String currentRole = widget.overrideRole;
-    final isCreatorOrAdmin = currentRole == 'creator' || currentRole == 'admin';
-
-    // Mendefinisikan daftar layar berdasarkan role
+    // SEMUA ORANG ADALAH KREATOR. Layar UploadVideoScreen langsung dimasukkan tanpa syarat 'if'.
     final List<Widget> screens = [
       const VideoFeedScreen(),
       const FriendsScreen(),
-      if (isCreatorOrAdmin) const UploadVideoScreen(), 
+      const UploadVideoScreen(), // Akses penuh untuk semua user
       const InboxScreen(),
-      ProfileScreen(userRole: currentRole), 
+      ProfileScreen(userRole: widget.overrideRole), 
     ];
 
     return Scaffold(
-      // [UPGRADE CTO] Menggunakan IndexedStack untuk performa tinggi: 
-      // Layar tidak akan di-rebuild (dimuat ulang) saat berpindah menu.
       body: IndexedStack(
         index: _currentIndex,
         children: screens,
       ),
-      
-      // [UPGRADE CTO] Bottom Bar dengan desain "Floating" modern & transparan
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: Colors.black,
@@ -49,42 +43,53 @@ class _AppNavigationState extends State<AppNavigation> {
           currentIndex: _currentIndex,
           onTap: (index) => setState(() => _currentIndex = index),
           backgroundColor: Colors.black,
-          selectedItemColor: Colors.amber, 
+          selectedItemColor: Colors.white, // Meniru standar UI TikTok (Putih saat aktif)
           unselectedItemColor: Colors.white54,
           type: BottomNavigationBarType.fixed,
-          selectedFontSize: 12,
-          unselectedFontSize: 12,
+          selectedFontSize: 11,
+          unselectedFontSize: 11,
           elevation: 0,
           items: [
             _buildNavItem(Icons.home_filled, 'Beranda'),
-            _buildNavItem(Icons.people_alt_rounded, 'Teman'),
+            _buildNavItem(Icons.people_alt_outlined, 'Teman'),
             
-            if (isCreatorOrAdmin)
-              BottomNavigationBarItem(
-                icon: Container(
-                  height: 32,
-                  width: 48,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(color: Colors.white.withOpacity(0.2), blurRadius: 4)
-                    ],
+            // TOMBOL "+" ALA TIKTOK UNTUK SEMUA PENGGUNA
+            BottomNavigationBarItem(
+              icon: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 46,
+                    height: 28,
+                    decoration: BoxDecoration(color: Colors.cyan, borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: const Icon(Icons.add_rounded, color: Colors.black, size: 28),
-                ),
-                label: '',
+                  Positioned(
+                    left: 4,
+                    child: Container(
+                      width: 42,
+                      height: 28,
+                      decoration: BoxDecoration(color: Colors.pinkAccent, borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                  Container(
+                    width: 38,
+                    height: 28,
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+                    child: const Icon(Icons.add_rounded, color: Colors.black, size: 24),
+                  ),
+                ],
               ),
+              label: '',
+            ),
               
-            _buildNavItem(Icons.chat_bubble_rounded, 'Kotak Masuk'),
-            _buildNavItem(Icons.person_rounded, 'Profil'),
+            _buildNavItem(Icons.chat_bubble_outline_rounded, 'Kotak Masuk'),
+            _buildNavItem(Icons.person_outline_rounded, 'Profil'),
           ],
         ),
       ),
     );
   }
 
-  // [UPGRADE CTO] Helper untuk standarisasi ikon agar kode utama bersih (Clean Code)
   BottomNavigationBarItem _buildNavItem(IconData icon, String label) {
     return BottomNavigationBarItem(
       icon: Padding(
