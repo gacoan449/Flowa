@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/interaction_buttons.dart';
 import '../widgets/video_card.dart';
-import '../widgets/video_feed_controller.dart'; // [EVALUASI PATH] Jalur relatif sudah diselaraskan kembali
+import '../video_feed_controller.dart'; // [PERBAIKAN ABSOLUT PATH] Posisi file di bawah folder presentation
 import '../../providers/video_feed_provider.dart';
 import '../../../../core/services/firebase_service.dart';
 import 'comment_sheet.dart';
@@ -128,7 +128,6 @@ class _VideoFeedScreenState extends State<VideoFeedScreen> {
                     left: 16,
                     right: 80,
                     child: Column(
-                      // [PERBAIKAN TYPO] Sintaks penulisan alignment Column telah dibersihkan total
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
