@@ -22,6 +22,7 @@ class _AppNavigationState extends State<AppNavigation> {
     final String currentRole = widget.overrideRole;
     final isCreatorOrAdmin = currentRole == 'creator' || currentRole == 'admin';
 
+    // Mendefinisikan daftar layar berdasarkan role
     final List<Widget> screens = [
       const VideoFeedScreen(),
       const FriendsScreen(),
@@ -31,82 +32,66 @@ class _AppNavigationState extends State<AppNavigation> {
     ];
 
     return Scaffold(
+      // [UPGRADE CTO] Menggunakan IndexedStack untuk performa tinggi: 
+      // Layar tidak akan di-rebuild (dimuat ulang) saat berpindah menu.
       body: IndexedStack(
         index: _currentIndex,
         children: screens,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        backgroundColor: Colors.black,
-        selectedItemColor: Colors.amber, 
-        unselectedItemColor: Colors.white60,
-        type: BottomNavigationBarType.fixed,
-        selectedFontSize: 11,
-        unselectedFontSize: 11,
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home_filled, size: 24),
-            label: 'Beranda',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.people, size: 24),
-            label: 'Teman',
-          ),
-          
-          if (isCreatorOrAdmin)
-            BottomNavigationBarItem(
-              icon: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Container(
-                    width: 45,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      color: Colors.cyan,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  Positioned(
-                    left: 4,
-                    child: Container(
-                      width: 41,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        // PERBAIKAN: Mengganti Colors.magenta menjadi Colors.pink resmi bawaan Flutter
-                        color: Colors.pink,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                  Container(
-                    width: 37,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.add, color: Colors.black, size: 20),
-                  ),
-                ],
-              ),
-              label: '',
-            ),
+      
+      // [UPGRADE CTO] Bottom Bar dengan desain "Floating" modern & transparan
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: Colors.black,
+          border: Border(top: BorderSide(color: Colors.white10, width: 0.5)),
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: (index) => setState(() => _currentIndex = index),
+          backgroundColor: Colors.black,
+          selectedItemColor: Colors.amber, 
+          unselectedItemColor: Colors.white54,
+          type: BottomNavigationBarType.fixed,
+          selectedFontSize: 12,
+          unselectedFontSize: 12,
+          elevation: 0,
+          items: [
+            _buildNavItem(Icons.home_filled, 'Beranda'),
+            _buildNavItem(Icons.people_alt_rounded, 'Teman'),
             
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline, size: 24),
-            label: 'Kotak Masuk',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline, size: 24),
-            label: 'Profil',
-          ),
-        ],
+            if (isCreatorOrAdmin)
+              BottomNavigationBarItem(
+                icon: Container(
+                  height: 32,
+                  width: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(color: Colors.white.withOpacity(0.2), blurRadius: 4)
+                    ],
+                  ),
+                  child: const Icon(Icons.add_rounded, color: Colors.black, size: 28),
+                ),
+                label: '',
+              ),
+              
+            _buildNavItem(Icons.chat_bubble_rounded, 'Kotak Masuk'),
+            _buildNavItem(Icons.person_rounded, 'Profil'),
+          ],
+        ),
       ),
+    );
+  }
+
+  // [UPGRADE CTO] Helper untuk standarisasi ikon agar kode utama bersih (Clean Code)
+  BottomNavigationBarItem _buildNavItem(IconData icon, String label) {
+    return BottomNavigationBarItem(
+      icon: Padding(
+        padding: const EdgeInsets.only(bottom: 4),
+        child: Icon(icon, size: 26),
+      ),
+      label: label,
     );
   }
 }
