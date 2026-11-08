@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../admin/admin_dashboard.dart';
 import 'auth_service.dart';
 import 'register_screen.dart';
 
@@ -11,11 +10,6 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // TEMPORARY: kredensial demo admin. Hapus dan pindahkan autentikasi
-  // ke backend/Firebase sebelum aplikasi dipublikasikan.
-  static const _demoAdminUsername = 'Flowa3241';
-  static const _demoAdminPassword = 'Fikrina2506';
-
   final email = TextEditingController();
   final password = TextEditingController();
   bool loading = false;
@@ -23,15 +17,6 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> submit() async {
     setState(() => loading = true);
     try {
-      if (email.text.trim() == _demoAdminUsername &&
-          password.text == _demoAdminPassword) {
-        if (!mounted) return;
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const AdminDashboard()),
-        );
-        return;
-      }
-
       await AuthService().login(
         email: email.text.trim(),
         password: password.text,
@@ -94,7 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           controller: email,
                           keyboardType: TextInputType.text,
                           decoration: const InputDecoration(
-                            labelText: 'Email / Username',
+                            labelText: 'Email',
                             prefixIcon: Icon(Icons.person_outline),
                           ),
                         ),
