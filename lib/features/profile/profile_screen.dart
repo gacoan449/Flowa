@@ -34,7 +34,7 @@ class ProfileScreen extends StatelessWidget {
           _menu(context, Icons.favorite_border, 'Favorit',
               'Produk yang kamu simpan', const FavoritesScreen()),
           _menu(context, Icons.account_balance_wallet_outlined, 'Dompet',
-              'Lihat pilihan isi saldo', const TopupScreen()),
+              'Lihat pilihan isi saldo', const TopUpScreen()),
           _menu(context, Icons.support_agent, 'Bantuan & Chat',
               'Hubungi Customer Service', const SupportChatScreen()),
           _menu(context, Icons.settings_outlined, 'Pengaturan Akun',
