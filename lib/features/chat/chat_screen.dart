@@ -27,7 +27,7 @@ class _ChatScreenState extends State<ChatScreen> {
   String get _uid => FirebaseAuth.instance.currentUser!.uid;
   String get _chatId {
     final ids = [_uid, widget.sellerId]..sort();
-    return '${ids.join('_')}_${widget.productId.isEmpty ? 'general' : widget.productId}';
+    return ids.join('_');
   }
 
   Future<void> _send() async {
