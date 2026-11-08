@@ -1,11 +1,16 @@
 rules_version = '2';
-service cloud.firestore { match /databases/{database}/documents {
-function signedIn(){return request.auth!=null;} function admin(){return signedIn()&&get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role=='admin';}
-match /users/{uid}{allow read,create:if signedIn()&&request.auth.uid==uid;allow update:if signedIn()&&request.auth.uid==uid&&request.resource.data.role==resource.data.role;}
-match /wallets/{uid}{allow read:if signedIn()&&request.auth.uid==uid;allow write:if false;}
-match /coin_transactions/{id}{allow read:if signedIn()&&resource.data.userId==request.auth.uid||admin();allow write:if false;}
-match /products/{id}{allow read:if true;allow create:if signedIn()&&request.resource.data.sellerId==request.auth.uid;allow update:if signedIn()&&(resource.data.sellerId==request.auth.uid||admin());allow delete:if admin();}
-match /chats/{id}{allow read,create,update:if signedIn();}
-match /chats/{chatId}/messages/{messageId}{allow read,create:if signedIn();allow update,delete:if false;}
-match /banners/{id}{allow read:if true;allow write:if admin();}
-} }
+service cloud.firestore {
+ match /databases/{database}/documents {
+  function signedIn(){return request.auth != null;}
+  function admin(){return signedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';}
+  match /users/{userId}{allow read,create,update: if signedIn() && (request.auth.uid==userId || admin());allow delete: if admin();}
+  match /users/{userId}/favorites/{doc}{allow read,write: if signedIn() && request.auth.uid==userId;}
+  match /users/{userId}/devices/{doc}{allow read,write: if signedIn() && request.auth.uid==userId;}
+  match /products/{id}{allow read: if true;allow create: if signedIn() && request.resource.data.sellerId==request.auth.uid;allow update,delete: if signedIn() && (resource.data.sellerId==request.auth.uid || admin());}
+  match /categories/{id}{allow read: if true;allow write: if admin();}
+  match /banners/{id}{allow read: if true;allow write: if admin();}
+  match /announcements/{id}{allow read: if signedIn();allow write: if admin();}
+  match /reports/{id}{allow create: if signedIn();allow read,update: if admin();}
+  match /support_threads/{id}{allow create: if signedIn();allow read,update: if signedIn() && (resource.data.userId==request.auth.uid || admin());match /messages/{mid}{allow read,write: if signedIn();}}
+ }
+}
