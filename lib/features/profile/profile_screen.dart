@@ -5,7 +5,6 @@ import '../auth/auth_service.dart';
 import '../chat/support_chat_screen.dart';
 import '../favorites/favorites_screen.dart';
 import '../products/my_listings_screen.dart';
-import '../wallet/topup_screen.dart';
 import 'settings_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -33,8 +32,6 @@ class ProfileScreen extends StatelessWidget {
               const MyListingsScreen()),
           _menu(context, Icons.favorite_border, 'Favorit',
               'Produk yang kamu simpan', const FavoritesScreen()),
-          _menu(context, Icons.account_balance_wallet_outlined, 'Dompet',
-              'Lihat pilihan isi saldo', const TopUpScreen()),
           _menu(context, Icons.support_agent, 'Bantuan & Chat',
               'Hubungi Customer Service', const SupportChatScreen()),
           _menu(context, Icons.settings_outlined, 'Pengaturan Akun',
