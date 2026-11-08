@@ -1,21 +1,22 @@
-// Jalankan: flutterfire configure
-// File ini adalah placeholder agar struktur proyek jelas.
-// Ganti dengan firebase_options.dart hasil konfigurasi Firebase resmi.
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 
+/// Firebase configuration for project flowa-d6d47.
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return const FirebaseOptions(
-          apiKey: 'ISI_DARI_FIREBASE',
-          appId: 'ISI_DARI_FIREBASE',
-          messagingSenderId: 'ISI_DARI_FIREBASE',
-          projectId: 'ISI_DARI_FIREBASE',
+          apiKey: 'AIzaSyArsKK5zAgLlE0DfLs_RDOL1qbYutOCWzQ',
+          appId: '1:1099448464104:android:4b06ecffad67e6a7920f5d',
+          messagingSenderId: '1099448464104',
+          projectId: 'flowa-d6d47',
+          storageBucket: 'flowa-d6d47.firebasestorage.app',
         );
       default:
-        throw UnsupportedError('Platform belum dikonfigurasi Firebase.');
+        throw UnsupportedError(
+          'Firebase baru dikonfigurasi untuk Android.',
+        );
     }
   }
 }
