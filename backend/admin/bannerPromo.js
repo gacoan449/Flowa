@@ -1,0 +1,1 @@
+export async function listBanners(db){return db.collection('banners').orderBy('createdAt','desc').get();} export async function setBannerStatus(db,id,active){return db.collection('banners').doc(id).update({active});}
