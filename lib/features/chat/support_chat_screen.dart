@@ -24,10 +24,10 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _markRead());
+    WidgetsBinding.instance.addPostFrameCallback((_) async {\n      await _ensureThread();\n      await _markRead();\n    });
   }
 
-  Future<void> _markRead() async {
+  Future<void> _ensureThread() async {\n    if (widget.admin) return;\n    try {\n      await thread.set({\n        'userId': uid,\n        'status': 'open',\n        'createdAt': FieldValue.serverTimestamp(),\n      }, SetOptions(merge: true));\n    } catch (_) {\n      // A visible stream error will explain a Firebase permission or network issue.\n    }\n  }\n\n  Future<void> _markRead() async {
     try {
       final snapshot = await thread.get();
       if (!snapshot.exists) return;
