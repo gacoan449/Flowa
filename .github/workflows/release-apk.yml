@@ -18,6 +18,67 @@ jobs:
       - name: Create Android platform project
         run: flutter create --platforms=android .
 
+      - name: Enable Android core library desugaring
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          candidates = [Path("android/app/build.gradle.kts"), Path("android/app/build.gradle")]
+          build_file = next((p for p in candidates if p.is_file()), None)
+          if build_file is None:
+              raise SystemExit("Android app Gradle file was not generated")
+
+          text = build_file.read_text()
+          kotlin_dsl = build_file.suffix == ".kts"
+          enabled = "isCoreLibraryDesugaringEnabled = true" if kotlin_dsl else "coreLibraryDesugaringEnabled true"
+          dependency = 'coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")' if kotlin_dsl else "coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'"
+
+          def block_span(source, pattern):
+              match = re.search(pattern + r"\\s*\\{", source)
+              if not match:
+                  return None
+              opening = source.find("{", match.start())
+              depth = 0
+              for index in range(opening, len(source)):
+                  if source[index] == "{":
+                      depth += 1
+                  elif source[index] == "}":
+                      depth -= 1
+                      if depth == 0:
+                          return opening, index
+              raise SystemExit("Unclosed Gradle block: " + pattern)
+
+          android_span = block_span(text, r"android")
+          if android_span is None:
+              raise SystemExit("Missing android { } block in " + str(build_file))
+          opening, closing = android_span
+          android_body = text[opening + 1:closing]
+          compile_span = block_span(android_body, r"compileOptions")
+          if compile_span is None:
+              compile_block = "\\n    compileOptions {\\n        " + enabled + "\\n    }\\n"
+              text = text[:closing] + compile_block + text[closing:]
+          else:
+              c_open, c_close = compile_span
+              compile_body = android_body[c_open + 1:c_close]
+              if "isCoreLibraryDesugaringEnabled" not in compile_body and "coreLibraryDesugaringEnabled" not in compile_body:
+                  absolute = opening + 1 + c_close
+                  text = text[:absolute] + "\\n        " + enabled + text[absolute:]
+
+          dependencies_span = block_span(text, r"dependencies")
+          if dependencies_span is None:
+              text += "\\ndependencies {\\n    " + dependency + "\\n}\\n"
+          else:
+              d_open, d_close = dependencies_span
+              dep_body = text[d_open + 1:d_close]
+              if "desugar_jdk_libs" not in dep_body:
+                  text = text[:d_close] + "\\n    " + dependency + text[d_close:]
+
+          build_file.write_text(text)
+          print("Enabled core library desugaring in", build_file)
+          PY
+
       - name: Restore Firebase configuration
         run: |
           test -f android/app/google-services.json
