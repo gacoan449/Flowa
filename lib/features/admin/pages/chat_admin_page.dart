@@ -1,0 +1,1 @@
+import 'package:flutter/material.dart'; class ChatAdminPage extends StatelessWidget{const ChatAdminPage({super.key});@override Widget build(BuildContext c)=>Scaffold(appBar:AppBar(title:const Text('Chat Admin')),body:const Padding(padding:EdgeInsets.all(20),child:Text('Pusat bantuan manual untuk pesan pengguna dan laporan. Tidak ada chatbot atau balasan AI.')));}
