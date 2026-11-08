@@ -30,53 +30,52 @@ jobs:
           if build_file is None:
               raise SystemExit("Android app Gradle file was not generated")
 
-          text = build_file.read_text()
+          source = build_file.read_text()
           kotlin_dsl = build_file.suffix == ".kts"
           enabled = "isCoreLibraryDesugaringEnabled = true" if kotlin_dsl else "coreLibraryDesugaringEnabled true"
           dependency = 'coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")' if kotlin_dsl else "coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'"
 
-          def block_span(source, pattern):
-              match = re.search(pattern + r"\\s*\\{", source)
+          def find_block(text, name):
+              match = re.search(r"\b" + re.escape(name) + r"\s*\{", text)
               if not match:
                   return None
-              opening = source.find("{", match.start())
+              opening = text.find("{", match.start())
               depth = 0
-              for index in range(opening, len(source)):
-                  if source[index] == "{":
+              for pos in range(opening, len(text)):
+                  if text[pos] == "{":
                       depth += 1
-                  elif source[index] == "}":
+                  elif text[pos] == "}":
                       depth -= 1
                       if depth == 0:
-                          return opening, index
-              raise SystemExit("Unclosed Gradle block: " + pattern)
+                          return opening, pos
+              raise SystemExit("Unclosed Gradle block: " + name)
 
-          android_span = block_span(text, r"android")
-          if android_span is None:
-              raise SystemExit("Missing android { } block in " + str(build_file))
-          opening, closing = android_span
-          android_body = text[opening + 1:closing]
-          compile_span = block_span(android_body, r"compileOptions")
-          if compile_span is None:
-              compile_block = "\\n    compileOptions {\\n        " + enabled + "\\n    }\\n"
-              text = text[:closing] + compile_block + text[closing:]
+          android = find_block(source, "android")
+          if android is None:
+              raise SystemExit("Missing android block in " + str(build_file))
+          a_open, a_close = android
+          android_body = source[a_open + 1:a_close]
+          compile_options = find_block(android_body, "compileOptions")
+          if compile_options is None:
+              source = source[:a_close] + "\n    compileOptions {\n        " + enabled + "\n    }\n" + source[a_close:]
           else:
-              c_open, c_close = compile_span
-              compile_body = android_body[c_open + 1:c_close]
+              _, c_close = compile_options
+              compile_body = android_body[compile_options[0] + 1:c_close]
               if "isCoreLibraryDesugaringEnabled" not in compile_body and "coreLibraryDesugaringEnabled" not in compile_body:
-                  absolute = opening + 1 + c_close
-                  text = text[:absolute] + "\\n        " + enabled + text[absolute:]
+                  absolute = a_open + 1 + c_close
+                  source = source[:absolute] + "\n        " + enabled + source[absolute:]
 
-          dependencies_span = block_span(text, r"dependencies")
-          if dependencies_span is None:
-              text += "\\ndependencies {\\n    " + dependency + "\\n}\\n"
+          deps = find_block(source, "dependencies")
+          if deps is None:
+              source += "\ndependencies {\n    " + dependency + "\n}\n"
           else:
-              d_open, d_close = dependencies_span
-              dep_body = text[d_open + 1:d_close]
+              _, d_close = deps
+              dep_body = source[deps[0] + 1:d_close]
               if "desugar_jdk_libs" not in dep_body:
-                  text = text[:d_close] + "\\n    " + dependency + text[d_close:]
+                  source = source[:d_close] + "\n    " + dependency + source[d_close:]
 
-          build_file.write_text(text)
-          print("Enabled core library desugaring in", build_file)
+          build_file.write_text(source)
+          print("Configured core library desugaring in", build_file)
           PY
 
       - name: Restore Firebase configuration
