@@ -1,0 +1,2 @@
+class CoinPackage{final String id,label;final int coins,price;const CoinPackage(this.id,this.label,this.coins,this.price);}
+const coinPackages=[CoinPackage('coin_5','5 Koin',5,5000),CoinPackage('coin_10','10 Koin',10,10000),CoinPackage('coin_25','25 Koin',25,25000),CoinPackage('coin_50','50 Koin',50,50000),CoinPackage('coin_100','100 Koin',100,100000)];
