@@ -15,23 +15,26 @@ jobs:
         with:
           channel: stable
 
+      - name: Create Android platform project
+        run: flutter create --platforms=android .
+
+      - name: Restore Firebase configuration
+        run: |
+          test -f android/app/google-services.json
+          grep -q '"package_name"' android/app/google-services.json
+
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Generate Android platform files
-        run: flutter create --platforms=android .
+      - name: Analyze project
+        run: flutter analyze
 
-      - name: Configure Android application ID
-        run: |
-          sed -i 's/com\.example\.pasar_komunitas/com.flowa.app/g' android/app/build.gradle.kts android/app/build.gradle 2>/dev/null || true
-          sed -i 's/com\.example\.pasar_komunitas/com.flowa.app/g' android/app/src/main/AndroidManifest.xml 2>/dev/null || true
-
-      - name: Build release APK
-        run: flutter build apk --release --split-per-abi
+      - name: Build universal release APK
+        run: flutter build apk --release
 
       - name: Upload release APK
         uses: actions/upload-artifact@v4
         with:
           name: Flowa-release
-          path: build/app/outputs/flutter-apk/*-release.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
