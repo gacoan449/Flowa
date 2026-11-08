@@ -1,0 +1,1 @@
+export async function sendAdminReply(db,{chatId,adminId,text}){return db.collection('support_messages').add({chatId,senderId:adminId,text,createdAt:new Date(),senderRole:'admin'});}
