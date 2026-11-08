@@ -1,0 +1,2 @@
+import 'dart:io'; import 'package:firebase_auth/firebase_auth.dart'; import 'package:firebase_storage/firebase_storage.dart';
+class StorageService{final _s=FirebaseStorage.instance;Future<String> uploadProductImage(File f)async{final uid=FirebaseAuth.instance.currentUser!.uid;final r=_s.ref('product_images/'+uid+'/'+DateTime.now().millisecondsSinceEpoch.toString()+'.jpg');await r.putFile(f);return r.getDownloadURL();}}
