@@ -141,16 +141,42 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   Future<void> _pickImage() async {
     if (_uploading || _sending) return;
     try {
-      final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 82, maxWidth: 1800);
-      if (picked == null || !mounted) return;
+      final picked = await ImagePicker().pickMultiImage(imageQuality: 82, maxWidth: 1800);
+      if (picked.isEmpty || !mounted) return;
       setState(() => _uploading = true);
-      final url = await CloudinaryService.uploadImage(File(picked.path), folder: 'flowa/chat/images');
-      await _sendPayload({'type': 'image', 'mediaUrl': url, 'text': ''}, '📷 Foto');
+      for (final image in picked.take(10)) {
+        final url = await CloudinaryService.uploadImage(File(image.path), folder: 'flowa/chat/images');
+        await _sendPayload({'type': 'image', 'mediaUrl': url, 'text': ''}, '📷 Foto');
+      }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Foto gagal dikirim: $e')));
     } finally { if (mounted) setState(() => _uploading = false); }
   }
 
+
+
+  Future<void> _chooseEmoji() async {
+    const emojis = ['😀','😂','🥰','😍','😊','😉','😭','😎','🤔','😮','😡','❤️','🔥','👍','🙏','🎉'];
+    await showModalBottomSheet<void>(
+      context: context, showDragHandle: true, backgroundColor: Colors.white,
+      builder: (ctx) => SafeArea(child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Wrap(spacing: 14, runSpacing: 14, children: emojis.map((emoji) =>
+          InkWell(onTap: () {
+            final value = _text.value;
+            final selection = value.selection;
+            final start = selection.isValid ? selection.start : value.text.length;
+            final end = selection.isValid ? selection.end : value.text.length;
+            final next = value.text.replaceRange(start, end, emoji);
+            _text.value = TextEditingValue(text: next,
+              selection: TextSelection.collapsed(offset: start + emoji.length));
+            Navigator.pop(ctx);
+            _focus.requestFocus();
+          }, child: Text(emoji, style: const TextStyle(fontSize: 29)))).toList(),
+        ),
+      )),
+    );
+  }
 
   Future<void> _toggleRecording() async {
     if (_recording) {
@@ -428,6 +454,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           padding: const EdgeInsets.fromLTRB(9, 9, 12, 9),
           decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: const Color(0xFF253858).withOpacity(.05), blurRadius: 14, offset: const Offset(0, -4))]),
           child: SafeArea(top: false, child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            IconButton(onPressed: _uploading || _sending ? null : _chooseEmoji,
+              icon: const Icon(Icons.emoji_emotions_outlined, color: Color(0xFF477CF4))),
             IconButton(onPressed: _uploading || _sending ? null : _pickImage,
               icon: _uploading ? const SizedBox(width: 19, height: 19, child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.add_photo_alternate_rounded, color: Color(0xFF477CF4))),
