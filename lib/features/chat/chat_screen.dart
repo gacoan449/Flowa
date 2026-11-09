@@ -400,7 +400,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                             const SizedBox(height: 5),
                             Row(mainAxisSize: MainAxisSize.min, children: [
                               Text(_clock(data['createdAt']), style: TextStyle(fontSize: 9, color: mine ? Colors.white.withOpacity(.78) : const Color(0xFF9AA5B5))),
-                              if (mine) ...[const SizedBox(width: 5), Icon(Icons.done_all_rounded, size: 15, color: statusColor)],
+                              if (mine) ...[const SizedBox(width: 5), Icon(isDelivered ? Icons.done_all_rounded : Icons.done_rounded, size: 15, color: statusColor)],
                             ]),
                             if (reactions.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 5),
                               child: Wrap(spacing: 4, children: reactions.values.toSet().map((e) => Text(e.toString(), style: const TextStyle(fontSize: 17))).toList())),
