@@ -53,6 +53,7 @@ class _UserProfileGateState extends State<_UserProfileGate> {
   Future<String> _loadRole() async {
     final ref = FirebaseFirestore.instance.collection('users').doc(widget.user.uid);
     final snapshot = await ref.get().timeout(const Duration(seconds: 15));
+    await ChatProfileService.syncCurrentUser(displayName: widget.user.displayName);
 
     if (!snapshot.exists) {
       await ref.set({
@@ -64,7 +65,6 @@ class _UserProfileGateState extends State<_UserProfileGate> {
       return 'user';
     }
 
-    await ChatProfileService.syncCurrentUser(displayName: widget.user.displayName);
     final data = snapshot.data() ?? <String, dynamic>{};
     final role = (data['role'] ?? 'user').toString().toLowerCase().trim();
     if (data['role'] == null || role.isEmpty) {
