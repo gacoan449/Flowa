@@ -18,7 +18,7 @@ jobs:
       - name: Create Android platform project
         run: flutter create --platforms=android .
 
-      - name: Enable Android core library desugaring
+      - name: Add microphone and notification permissions\n        run: |\n          python3 - <<'PY'\n          from pathlib import Path\n          p = Path('android/app/src/main/AndroidManifest.xml')\n          s = p.read_text()\n          for permission in ['android.permission.RECORD_AUDIO', 'android.permission.POST_NOTIFICATIONS']:\n              tag = f'    <uses-permission android:name=\"{permission}\" />\\n'\n              if permission not in s:\n                  s = s.replace('<application', tag + '    <application', 1)\n          p.write_text(s)\n          PY\n\n      - name: Enable Android core library desugaring
         shell: bash
         run: |
           python3 - <<'PY'
