@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+
+import '../../core/services/cloudinary_service.dart';
 
 class EditListingScreen extends StatefulWidget {
   final String id;
@@ -32,22 +32,24 @@ class _EditListingScreenState extends State<EditListingScreen> {
     price = TextEditingController(text: (widget.data['price'] ?? 0).toString());
     status = widget.data['status'] ?? 'active';
     urls = List<String>.from(widget.data['imageUrls'] ?? []);
+    if (urls.isEmpty && (widget.data['imageUrl'] ?? '').toString().isNotEmpty) {
+      urls = [widget.data['imageUrl'].toString()];
+    }
   }
 
   Future<void> addPhoto() async {
     try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) throw StateError('Silakan login kembali.');
-      final files = await ImagePicker().pickMultiImage(imageQuality: 85);
+      final files = await ImagePicker().pickMultiImage(
+        imageQuality: 80,
+        maxWidth: 1600,
+        maxHeight: 1600,
+      );
       for (final file in files) {
-        final ref = FirebaseStorage.instance.ref(
-          'product_images/${user.uid}/${widget.id}/edit_${DateTime.now().microsecondsSinceEpoch}.jpg',
-        );
-        await ref.putFile(
+        final url = await CloudinaryService.uploadImage(
           File(file.path),
-          SettableMetadata(contentType: 'image/jpeg'),
+          folder: 'flowa/products/edit/${widget.id}',
         );
-        urls.add(await ref.getDownloadURL());
+        urls.add(url);
       }
       if (mounted) setState(() {});
     } catch (e) {
@@ -110,22 +112,14 @@ class _EditListingScreenState extends State<EditListingScreen> {
               children: [
                 ...urls.map((url) => Stack(
                       children: [
-                        Image.network(
-                          url,
-                          width: 90,
-                          height: 90,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) =>
-                              const SizedBox(width: 90, height: 90, child: Icon(Icons.broken_image)),
-                        ),
+                        Image.network(url, width: 90, height: 90, fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const SizedBox(
+                            width: 90, height: 90, child: Icon(Icons.broken_image))),
                         Positioned(
                           right: 0,
                           child: IconButton(
-                            onPressed: () => setState(() => urls.remove(url)),
-                            icon: const CircleAvatar(
-                              radius: 12,
-                              child: Icon(Icons.close, size: 14),
-                            ),
+                            onPressed: saving ? null : () => setState(() => urls.remove(url)),
+                            icon: const CircleAvatar(radius: 12, child: Icon(Icons.close, size: 14)),
                           ),
                         ),
                       ],
@@ -138,16 +132,10 @@ class _EditListingScreenState extends State<EditListingScreen> {
               ],
             ),
             TextField(controller: title, decoration: const InputDecoration(labelText: 'Judul')),
-            TextField(
-              controller: price,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Harga'),
-            ),
-            TextField(
-              controller: description,
-              maxLines: 5,
-              decoration: const InputDecoration(labelText: 'Deskripsi'),
-            ),
+            TextField(controller: price, keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Harga')),
+            TextField(controller: description, maxLines: 5,
+              decoration: const InputDecoration(labelText: 'Deskripsi')),
             DropdownButtonFormField<String>(
               value: status,
               items: const [
@@ -158,10 +146,8 @@ class _EditListingScreenState extends State<EditListingScreen> {
               onChanged: saving ? null : (value) => setState(() => status = value ?? 'active'),
             ),
             const SizedBox(height: 20),
-            FilledButton(
-              onPressed: saving ? null : save,
-              child: Text(saving ? 'Menyimpan...' : 'Simpan Perubahan'),
-            ),
+            FilledButton(onPressed: saving ? null : save,
+              child: Text(saving ? 'Menyimpan...' : 'Simpan Perubahan')),
           ],
         ),
       );
