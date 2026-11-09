@@ -65,7 +65,7 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
             padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
             child: Container(
               decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(17),
-                boxShadow: [BoxShadow(color: const Color(0xFF15294B).withValues(alpha: 0.045), blurRadius: 18, offset: const Offset(0, 6))]),
+                boxShadow: [BoxShadow(color: const Color(0xFF15294B).withOpacity(0.045), blurRadius: 18, offset: const Offset(0, 6))]),
               child: TextField(
                 controller: _search,
                 onChanged: (value) => setState(() => _query = value.trim().toLowerCase()),
