@@ -53,8 +53,6 @@ class ProductDetailScreen extends StatelessWidget {
         }
         final mainImage = (product['imageUrl'] ?? '').toString();
         if (images.isEmpty && mainImage.isNotEmpty) images.add(mainImage);
-        final qr = (product['qrCodeUrl'] ?? product['qrUrl'] ?? '').toString();
-        if (qr.isNotEmpty && !images.contains(qr)) images.insert(0, qr);
         final location = (product['locationName'] ?? '').toString().trim();
         final category = (product['category'] ?? 'Produk').toString();
         final price = _rupiah(product['price']);
