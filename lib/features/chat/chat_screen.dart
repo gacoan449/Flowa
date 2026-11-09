@@ -42,7 +42,6 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _chatReady = _ensureChat();
     _text.addListener(_onTextChanged);
   }
@@ -295,22 +294,10 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
-      ChatProfileService.setPresence(_uid, false);
-      _setTyping(false);
-    } else if (state == AppLifecycleState.resumed) {
-      ChatProfileService.setPresence(_uid, true);
-    }
-  }
-
-  @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     _typingTimer?.cancel();
     _text.removeListener(_onTextChanged);
     _setTyping(false);
-    ChatProfileService.setPresence(_uid, false);
     _recorder.dispose();
     _audioPlayer.dispose();
     _text.dispose(); _focus.dispose(); super.dispose();
