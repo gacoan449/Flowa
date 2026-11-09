@@ -53,7 +53,7 @@ class _UserProfileGateState extends State<_UserProfileGate> {
   Future<String> _loadRole() async {
     final ref = FirebaseFirestore.instance.collection('users').doc(widget.user.uid);
     final snapshot = await ref.get().timeout(const Duration(seconds: 15));
-    await ChatProfileService.syncCurrentUser(displayName: widget.user.displayName);
+    try {\n      await ChatProfileService.syncCurrentUser(displayName: widget.user.displayName);\n    } catch (_) {\n      // Public chat profile sync is best-effort and must not block sign-in.\n    }
 
     if (!snapshot.exists) {
       await ref.set({
