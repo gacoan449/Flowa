@@ -9,7 +9,7 @@ class CloudinaryService {
   static const String cloudName = 'mgr0ynav';
   static const String uploadPreset = 'ml_default';
 
-  static Future<String> uploadImage(File file, {String folder = 'flowa'}) async {
+  static Future<String> uploadAudio(File file, {String folder = 'flowa/chat/audio'}) async {\n    final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/video/upload');\n    return _upload(file, uri, folder);\n  }\n\n  static Future<String> uploadImage(File file, {String folder = 'flowa'}) async {\n    final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');\n    return _upload(file, uri, folder);\n  }\n\n  static Future<String> _upload(File file, Uri uri, String folder) async {
     final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
     final request = http.MultipartRequest('POST', uri)
       ..fields['upload_preset'] = uploadPreset
