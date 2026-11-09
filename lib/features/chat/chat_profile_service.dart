@@ -27,9 +27,17 @@ class ChatProfileService {
       ref(uid).snapshots();
 
   static Future<void> setPresence(String uid, bool online) async {
+    final user = FirebaseAuth.instance.currentUser;
+    final fallbackName = (user?.displayName ?? '').trim().isNotEmpty
+        ? user!.displayName!.trim()
+        : (user?.email?.split('@').first ?? 'Pengguna Flowa');
     await ref(uid).set({
+      'uid': uid,
+      'displayName': fallbackName,
+      'photoUrl': user?.photoURL ?? '',
       'isOnline': online,
       'lastSeen': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
 }
