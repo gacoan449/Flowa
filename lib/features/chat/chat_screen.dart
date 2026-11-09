@@ -23,6 +23,26 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final _text = TextEditingController();
   bool _sending = false;
+  late final Future<void> _chatReady;
+
+  @override
+  void initState() {
+    super.initState();
+    _chatReady = _ensureChat();
+  }
+
+  Future<void> _ensureChat() async {
+    if (widget.sellerId.isEmpty || widget.sellerId == _uid) {
+      throw StateError('ID penjual tidak valid.');
+    }
+    final chat = FirebaseFirestore.instance.collection('chats').doc(_chatId);
+    await chat.set({
+      'participants': ([_uid, widget.sellerId]..sort()),
+      'productId': widget.productId,
+      'productTitle': widget.productTitle,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
 
   String get _uid => FirebaseAuth.instance.currentUser!.uid;
   String get _chatId {
@@ -41,12 +61,9 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     setState(() => _sending = true);
     try {
-      final db = FirebaseFirestore.instance;
-      final chat = db.collection('chats').doc(_chatId);
+      await _chatReady;
+      final chat = FirebaseFirestore.instance.collection('chats').doc(_chatId);
       await chat.set({
-        'participants': [_uid, widget.sellerId],
-        'productId': widget.productId,
-        'productTitle': widget.productTitle,
         'lastMessage': value,
         'lastMessageAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
@@ -90,14 +107,28 @@ class _ChatScreenState extends State<ChatScreen> {
       body: Column(
         children: [
           Expanded(
-            child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream: FirebaseFirestore.instance
-                  .collection('chats')
-                  .doc(_chatId)
-                  .collection('messages')
-                  .orderBy('createdAt', descending: true)
-                  .snapshots(),
-              builder: (context, snapshot) {
+            child: FutureBuilder<void>(
+              future: _chatReady,
+              builder: (context, readySnapshot) {
+                if (readySnapshot.hasError) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Text('Percakapan gagal disiapkan: ${readySnapshot.error}'),
+                    ),
+                  );
+                }
+                if (readySnapshot.connectionState != ConnectionState.done) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                  stream: FirebaseFirestore.instance
+                      .collection('chats')
+                      .doc(_chatId)
+                      .collection('messages')
+                      .orderBy('createdAt', descending: true)
+                      .snapshots(),
+                  builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Center(
                     child: Padding(
@@ -132,6 +163,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         child: Text((data['text'] ?? '').toString()),
                       ),
                     );
+                  },
+                );
                   },
                 );
               },
