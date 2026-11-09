@@ -199,7 +199,7 @@ class _ChatScreenState extends State<ChatScreen> {
         return;
       }
       final dir = await getTemporaryDirectory();
-      final path = '\${dir.path}/flowa_voice_\${DateTime.now().millisecondsSinceEpoch}.m4a';
+      final path = '${dir.path}/flowa_voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
       await _recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 64000, sampleRate: 44100), path: path);
       if (mounted) setState(() => _recording = true);
     } catch (e) {
