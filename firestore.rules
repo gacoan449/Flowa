@@ -79,7 +79,7 @@ service cloud.firestore {
         }
         allow read: if isParticipant();
         allow create: if isParticipant()
-          && !chatData().get('blockedBy', []).hasAny([request.auth.uid])
+          && chatData().get('blockedBy', []).size() == 0
           && request.resource.data.senderId == request.auth.uid
           && (
             (request.resource.data.text is string && request.resource.data.text.size() > 0)
