@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../admin/admin_dashboard.dart';
 import '../home/home_screen.dart';
 import 'login_screen.dart';
+import '../chat/chat_profile_service.dart';
 
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
@@ -63,6 +64,7 @@ class _UserProfileGateState extends State<_UserProfileGate> {
       return 'user';
     }
 
+    await ChatProfileService.syncCurrentUser(displayName: widget.user.displayName);
     final data = snapshot.data() ?? <String, dynamic>{};
     final role = (data['role'] ?? 'user').toString().toLowerCase().trim();
     if (data['role'] == null || role.isEmpty) {
