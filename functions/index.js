@@ -31,6 +31,7 @@ async function sendToUser(userId, title, body, data) {
   await Promise.all(stale.map((token) =>
     db.collection("users").doc(userId).collection("devices").doc(token).delete()
   ));
+  return response.successCount > 0;
 }
 
 exports.notifyChatMessage = onDocumentCreated(
@@ -52,9 +53,12 @@ exports.notifyChatMessage = onDocumentCreated(
       message.type === "audio" ? "Mengirim pesan suara" :
       (message.text || "Pesan baru").slice(0, 120);
 
-    await sendToUser(recipientId, senderName, body, {
+    const delivered = await sendToUser(recipientId, senderName, body, {
       type: "chat_message", chatId, senderId: message.senderId,
     });
+    if (delivered) {
+      await event.data.ref.update({ deliveredTo: admin.firestore.FieldValue.arrayUnion(recipientId) });
+    }
     logger.info("Chat notification dispatched", { chatId, recipientId });
   }
 );
