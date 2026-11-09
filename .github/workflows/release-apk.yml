@@ -25,7 +25,7 @@ jobs:
           p = Path('android/app/src/main/AndroidManifest.xml')
           s = p.read_text()
           for permission in ['android.permission.RECORD_AUDIO', 'android.permission.POST_NOTIFICATIONS']:
-              tag = '    <uses-permission android:name="' + permission + '" />\\n'
+              tag = '    <uses-permission android:name="' + permission + '" />' + '\n'
               if permission not in s:
                   s = s.replace('<application', tag + '    <application', 1)
           p.write_text(s)
