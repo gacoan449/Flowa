@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -25,6 +28,10 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   final _focus = FocusNode();
   bool _sending = false;
   bool _uploading = false;
+  bool _recording = false;
+  String? _playingUrl;
+  final AudioRecorder _recorder = AudioRecorder();
+  final AudioPlayer _audioPlayer = AudioPlayer();
   late final Future<void> _chatReady;
   Timer? _typingTimer;
   String get _uid => FirebaseAuth.instance.currentUser!.uid;
@@ -144,6 +151,52 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     } finally { if (mounted) setState(() => _uploading = false); }
   }
 
+
+  Future<void> _toggleRecording() async {
+    if (_recording) {
+      try {
+        final path = await _recorder.stop();
+        if (mounted) setState(() => _recording = false);
+        if (path == null) return;
+        setState(() => _uploading = true);
+        final url = await CloudinaryService.uploadAudio(File(path));
+        await _sendPayload({'type': 'audio', 'mediaUrl': url, 'text': ''}, '🎤 Pesan suara');
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Pesan suara gagal dikirim: $e')));
+      } finally {
+        if (mounted) setState(() => _uploading = false);
+      }
+      return;
+    }
+    try {
+      if (!await _recorder.hasPermission()) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Izin mikrofon diperlukan untuk merekam suara.')));
+        return;
+      }
+      final dir = await getTemporaryDirectory();
+      final path = '\${dir.path}/flowa_voice_\${DateTime.now().millisecondsSinceEpoch}.m4a';
+      await _recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 64000, sampleRate: 44100), path: path);
+      if (mounted) setState(() => _recording = true);
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Mikrofon tidak dapat dimulai: $e')));
+    }
+  }
+
+  Future<void> _playAudio(String url) async {
+    try {
+      if (_playingUrl == url) {
+        await _audioPlayer.stop();
+        if (mounted) setState(() => _playingUrl = null);
+      } else {
+        await _audioPlayer.stop();
+        await _audioPlayer.play(UrlSource(url));
+        if (mounted) setState(() => _playingUrl = url);
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Audio tidak dapat diputar: $e')));
+    }
+  }
+
   Future<void> _react(DocumentReference<Map<String, dynamic>> ref, String emoji) async {
     try {
       await ref.update({'reactions.$_uid': emoji, 'updatedAt': FieldValue.serverTimestamp()});
@@ -232,6 +285,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     _text.removeListener(_onTextChanged);
     _setTyping(false);
     ChatProfileService.setPresence(_uid, false);
+    _recorder.dispose();
+    _audioPlayer.dispose();
     _text.dispose(); _focus.dispose(); super.dispose();
   }
 
@@ -333,6 +388,13 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                             if (type == 'image' && media.isNotEmpty)
                               ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.network(media, width: 220, fit: BoxFit.cover,
                                 errorBuilder: (_, __, ___) => const Padding(padding: EdgeInsets.all(12), child: Text('Foto tidak dapat dimuat'))))
+                            else if (type == 'audio' && media.isNotEmpty)
+                              Row(mainAxisSize: MainAxisSize.min, children: [
+                                IconButton(onPressed: () => _playAudio(media),
+                                  icon: Icon(_playingUrl == media ? Icons.stop_circle_rounded : Icons.play_circle_fill_rounded,
+                                    color: mine ? Colors.white : const Color(0xFF356DEB), size: 30)),
+                                Text('Pesan suara', style: TextStyle(color: mine ? Colors.white : const Color(0xFF26354B), fontSize: 13)),
+                              ])
                             else
                               Align(alignment: Alignment.centerLeft, child: Text(value, style: TextStyle(color: mine ? Colors.white : const Color(0xFF26354B), fontSize: 14, height: 1.4))),
                             const SizedBox(height: 5),
@@ -369,6 +431,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             IconButton(onPressed: _uploading || _sending ? null : _pickImage,
               icon: _uploading ? const SizedBox(width: 19, height: 19, child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.add_photo_alternate_rounded, color: Color(0xFF477CF4))),
+            IconButton(onPressed: _uploading ? null : _toggleRecording,
+              icon: Icon(_recording ? Icons.stop_circle_rounded : Icons.mic_rounded,
+                color: _recording ? Colors.red : const Color(0xFF477CF4))),
             Expanded(child: Container(
               decoration: BoxDecoration(color: const Color(0xFFF2F4F8), borderRadius: BorderRadius.circular(23)),
               child: TextField(controller: _text, focusNode: _focus, minLines: 1, maxLines: 5,
