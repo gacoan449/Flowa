@@ -13,7 +13,6 @@ class ProductDetailScreen extends StatelessWidget {
 
   static const _blue = Color(0xFF1769E8);
   static const _ink = Color(0xFF17243A);
-  static const _muted = Color(0xFF718096);
 
   String _rupiah(dynamic value) {
     final amount = value is num ? value.toInt() : int.tryParse('$value') ?? 0;
