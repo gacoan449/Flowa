@@ -47,7 +47,9 @@ class _UserProfileGateState extends State<_UserProfileGate> with WidgetsBindingO
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _roleFuture = _loadRole();
+    _updatePresence(true);
   }
 
   Future<String> _loadRole() async {
