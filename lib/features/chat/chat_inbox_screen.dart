@@ -67,6 +67,7 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
                   icon: const Icon(Icons.close_rounded)),
                 border: InputBorder.none, contentPadding: const EdgeInsets.symmetric(vertical: 16)),
           )),
+        ),
         const Padding(padding: EdgeInsets.symmetric(horizontal: 21), child: Row(children: [
           Text('Terbaru', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF17243A))),
           Spacer(), Icon(Icons.lock_outline_rounded, size: 13, color: Color(0xFF8C98AA)),
