@@ -41,7 +41,7 @@ class _UserProfileGate extends StatefulWidget {
   State<_UserProfileGate> createState() => _UserProfileGateState();
 }
 
-class _UserProfileGateState extends State<_UserProfileGate> {
+class _UserProfileGateState extends State<_UserProfileGate> with WidgetsBindingObserver {
   late Future<String> _roleFuture;
 
   @override
@@ -75,7 +75,7 @@ class _UserProfileGateState extends State<_UserProfileGate> {
     return role;
   }
 
-  void _retry() => setState(() => _roleFuture = _loadRole());
+  Future<void> _updatePresence(bool online) async {\n    try { await ChatProfileService.setPresence(widget.user.uid, online); } catch (_) {}\n  }\n\n  @override\n  void didChangeAppLifecycleState(AppLifecycleState state) {\n    if (state == AppLifecycleState.resumed) _updatePresence(true);\n    if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) _updatePresence(false);\n  }\n\n  @override\n  void dispose() {\n    WidgetsBinding.instance.removeObserver(this);\n    _updatePresence(false);\n    super.dispose();\n  }\n\n  void _retry() => setState(() => _roleFuture = _loadRole());
 
   @override
   Widget build(BuildContext context) {
