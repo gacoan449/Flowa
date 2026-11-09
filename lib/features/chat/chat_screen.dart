@@ -23,7 +23,7 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
+class _ChatScreenState extends State<ChatScreen> {
   final _text = TextEditingController();
   final _focus = FocusNode();
   bool _sending = false;
