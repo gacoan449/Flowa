@@ -53,7 +53,11 @@ class _UserProfileGateState extends State<_UserProfileGate> with WidgetsBindingO
   Future<String> _loadRole() async {
     final ref = FirebaseFirestore.instance.collection('users').doc(widget.user.uid);
     final snapshot = await ref.get().timeout(const Duration(seconds: 15));
-    try {\n      await ChatProfileService.syncCurrentUser(displayName: widget.user.displayName);\n    } catch (_) {\n      // Public chat profile sync is best-effort and must not block sign-in.\n    }
+    try {
+      await ChatProfileService.syncCurrentUser(displayName: widget.user.displayName);
+    } catch (_) {
+      // Public chat profile sync is best-effort and must not block sign-in.
+    }
 
     if (!snapshot.exists) {
       await ref.set({
@@ -75,7 +79,24 @@ class _UserProfileGateState extends State<_UserProfileGate> with WidgetsBindingO
     return role;
   }
 
-  Future<void> _updatePresence(bool online) async {\n    try { await ChatProfileService.setPresence(widget.user.uid, online); } catch (_) {}\n  }\n\n  @override\n  void didChangeAppLifecycleState(AppLifecycleState state) {\n    if (state == AppLifecycleState.resumed) _updatePresence(true);\n    if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) _updatePresence(false);\n  }\n\n  @override\n  void dispose() {\n    WidgetsBinding.instance.removeObserver(this);\n    _updatePresence(false);\n    super.dispose();\n  }\n\n  void _retry() => setState(() => _roleFuture = _loadRole());
+  Future<void> _updatePresence(bool online) async {
+    try { await ChatProfileService.setPresence(widget.user.uid, online); } catch (_) {}
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _updatePresence(true);
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) _updatePresence(false);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _updatePresence(false);
+    super.dispose();
+  }
+
+  void _retry() => setState(() => _roleFuture = _loadRole());
 
   @override
   Widget build(BuildContext context) {
