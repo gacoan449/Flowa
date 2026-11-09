@@ -2,7 +2,8 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+
+import '../../core/services/cloudinary_service.dart';
 
 class ProductService {
   final _db = FirebaseFirestore.instance;
@@ -13,13 +14,10 @@ class ProductService {
     if (user == null) throw StateError('Sesi login berakhir. Silakan login kembali.');
     final urls = <String>[];
     for (var i = 0; i < files.length; i++) {
-      final ref = FirebaseStorage.instance
-          .ref('product_images/${user.uid}/$id/$i.jpg');
-      await ref.putFile(
+      urls.add(await CloudinaryService.uploadImage(
         files[i],
-        SettableMetadata(contentType: 'image/jpeg'),
-      );
-      urls.add(await ref.getDownloadURL());
+        folder: 'flowa/products/${user.uid}/$id',
+      ));
     }
     return urls;
   }
@@ -42,35 +40,26 @@ class ProductService {
     final ref = _db.collection('products').doc();
     final userDoc = await _db.collection('users').doc(user.uid).get();
     final urls = await uploadImages(images, ref.id);
-    try {
-      await ref.set({
-        'sellerId': user.uid,
-        'sellerName': userDoc.data()?['name'] ??
-            user.displayName ??
-            user.email ??
-            'Pengguna Flowa',
-        'title': title.trim(),
-        'description': description.trim(),
-        'price': price,
-        'imageUrl': urls.isEmpty ? '' : urls.first,
-        'imageUrls': urls,
-        'latitude': latitude,
-        'longitude': longitude,
-        'locationName': locationName,
-        'category': category,
-        'status': 'active',
-        'reportCount': 0,
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      }).timeout(const Duration(seconds: 30));
-    } catch (_) {
-      for (final url in urls) {
-        try {
-          await FirebaseStorage.instance.refFromURL(url).delete();
-        } catch (_) {}
-      }
-      rethrow;
-    }
+    await ref.set({
+      'sellerId': user.uid,
+      'sellerName': userDoc.data()?['name'] ??
+          user.displayName ??
+          user.email ??
+          'Pengguna Flowa',
+      'title': title.trim(),
+      'description': description.trim(),
+      'price': price,
+      'imageUrl': urls.isEmpty ? '' : urls.first,
+      'imageUrls': urls,
+      'latitude': latitude,
+      'longitude': longitude,
+      'locationName': locationName,
+      'category': category,
+      'status': 'active',
+      'reportCount': 0,
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }).timeout(const Duration(seconds: 30));
   }
 
   Future<void> deleteProduct(String id, List<dynamic> urls) async {
@@ -81,12 +70,8 @@ class ProductService {
     if (!snapshot.exists || snapshot.data()?['sellerId'] != user.uid) {
       throw StateError('Iklan tidak ditemukan atau bukan milik akun ini.');
     }
+    // Penghapusan file Cloudinary memerlukan endpoint server yang menyimpan API Secret.
     await ref.delete();
-    for (final url in urls) {
-      try {
-        await FirebaseStorage.instance.refFromURL(url.toString()).delete();
-      } catch (_) {}
-    }
   }
 
   Future<void> report(String id, String reason) async {
