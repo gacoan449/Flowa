@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../chat/chat_profile_service.dart';
+
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -31,6 +33,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       await user.updateDisplayName(_name.text.trim());
       await user.reload();
+      await ChatProfileService.syncCurrentUser(displayName: _name.text.trim());
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Nama profil berhasil diperbarui.')),
