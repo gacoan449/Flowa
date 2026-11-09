@@ -55,7 +55,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       'productTitle': widget.productTitle,
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
-    await ChatProfileService.setPresence(_uid, true);
+    try { await ChatProfileService.setPresence(_uid, true); } catch (_) {}
   }
 
   void _onTextChanged() {
