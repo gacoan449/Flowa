@@ -381,8 +381,10 @@ class _ChatScreenState extends State<ChatScreen> {
                     final media = (data['mediaUrl'] ?? '').toString();
                     final delivered = List<String>.from(data['deliveredTo'] ?? const []);
                     final read = List<String>.from(data['readBy'] ?? const []);
-                    final statusColor = read.contains(widget.sellerId) ? const Color(0xFF66D9FF)
-                      : delivered.contains(widget.sellerId) ? const Color(0xFFE0E8F5) : const Color(0xFFB7C3D5);
+                    final isRead = read.contains(widget.sellerId);
+                    final isDelivered = delivered.contains(widget.sellerId);
+                    final statusColor = isRead ? const Color(0xFF45D6FF)
+                      : isDelivered ? const Color(0xFFD5DEED) : const Color(0xFFB7C3D5);
                     final reactions = Map<String, dynamic>.from(data['reactions'] ?? {});
                     return Align(
                       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
