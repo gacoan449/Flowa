@@ -12,13 +12,25 @@ class ChatProfileService {
   static Future<void> syncCurrentUser({String? displayName}) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-    final name = (displayName ?? user.displayName ?? '').trim();
+    Map<String, dynamic> privateProfile = {};
+    try {
+      final snapshot = await _db.collection('users').doc(user.uid).get();
+      privateProfile = snapshot.data() ?? {};
+    } catch (_) {}
+    var name = 'Pengguna Flowa';
+    for (final candidate in [privateProfile['name'], displayName, user.displayName]) {
+      final value = (candidate ?? '').toString().trim();
+      if (value.isNotEmpty) { name = value; break; }
+    }
+    final usernameValue = (privateProfile['username'] ?? '').toString().trim();
+    final username = usernameValue.isNotEmpty ? usernameValue :
+      'flowa_${user.uid.substring(0, user.uid.length < 6 ? user.uid.length : 6)}';
     await ref(user.uid).set({
       'uid': user.uid,
-      'displayName': name.isNotEmpty
-          ? name
-          : (user.email?.split('@').first ?? 'Pengguna Flowa'),
-      'photoUrl': user.photoURL ?? '',
+      'displayName': name,
+      'username': username,
+      'bio': (privateProfile['bio'] ?? '').toString(),
+      'photoUrl': (privateProfile['photoUrl'] ?? user.photoURL ?? '').toString(),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
@@ -28,13 +40,15 @@ class ChatProfileService {
 
   static Future<void> setPresence(String uid, bool online) async {
     final user = FirebaseAuth.instance.currentUser;
-    final fallbackName = (user?.displayName ?? '').trim().isNotEmpty
-        ? user!.displayName!.trim()
-        : (user?.email?.split('@').first ?? 'Pengguna Flowa');
+    final existing = await ref(uid).get();
+    final current = existing.data() ?? <String, dynamic>{};
+    final fallbackName = (current['displayName'] ?? user?.displayName ?? 'Pengguna Flowa').toString();
+    final username = (current['username'] ?? 'flowa_${uid.substring(0, uid.length < 6 ? uid.length : 6)}').toString();
     await ref(uid).set({
       'uid': uid,
       'displayName': fallbackName,
-      'photoUrl': user?.photoURL ?? '',
+      'username': username,
+      'photoUrl': current['photoUrl'] ?? user?.photoURL ?? '',
       'isOnline': online,
       'lastSeen': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
