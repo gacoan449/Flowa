@@ -42,11 +42,11 @@ class PublicUserProfileScreen extends StatelessWidget {
           ])),
           Expanded(child:StreamBuilder<QuerySnapshot<Map<String,dynamic>>>(
             stream:FirebaseFirestore.instance.collection('products')
-              .where('sellerId',isEqualTo:userId).where('status',isEqualTo:'active').snapshots(),
+              .where('sellerId',isEqualTo:userId).snapshots(),
             builder:(context,snapshot){
               if(snapshot.hasError)return const Center(child:Text('Produk belum dapat dimuat.'));
               if(!snapshot.hasData)return const Center(child:CircularProgressIndicator());
-              final products=snapshot.data!.docs;
+              final products=snapshot.data!.docs.where((doc)=>(doc.data()['status']??'').toString()=='active').toList();
               if(products.isEmpty)return const Center(child:Text('Pengguna ini belum memiliki produk aktif.'));
               return GridView.builder(
                 padding:const EdgeInsets.all(12),
