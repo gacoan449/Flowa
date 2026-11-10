@@ -260,13 +260,13 @@ exports.updateMarketplaceOrderStatus = onCall(async (request) => {
         const data = productSnap.data();
         tx.update(productRef, { stock: Number(data.stock || 0) + Number(order.quantity || 1), status: "active", updatedAt: admin.firestore.FieldValue.serverTimestamp() });
       }
-      tx.update(ref, { stockRestored: true });
     }
     const history = Array.isArray(order.statusHistory) ? order.statusHistory : [];
     tx.update(ref, {
       status, statusReason: typeof reason === "string" ? reason.slice(0, 500) : "",
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       statusHistory: [...history, { status, by: auth.uid, at: new Date().toISOString() }],
+      ...(status === "cancelled" && !order.stockRestored ? { stockRestored: true } : {}),
     });
     return { orderId, previousStatus: current, status };
   });
