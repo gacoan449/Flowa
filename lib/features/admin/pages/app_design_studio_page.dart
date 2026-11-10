@@ -159,7 +159,7 @@ class _AppDesignStudioPageState extends State<AppDesignStudioPage> {
   Widget _slider(String label, double value, double min, double max, ValueChanged<double> onChanged, {String suffix = ''}) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [Expanded(child: Text(label)), Text(value.toStringAsFixed(0) + suffix, style: const TextStyle(fontWeight: FontWeight.bold))]),
-      Slider(value: value.clamp(min, max), min: min, max: max, onChanged: (v) => setState(() => onChanged(v))),
+      Slider(value: value.clamp(min, max).toDouble(), min: min, max: max, onChanged: (v) => setState(() => onChanged(v))),
     ]);
   }
 
