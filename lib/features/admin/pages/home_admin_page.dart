@@ -81,15 +81,6 @@ class _HomeAdminPageState extends State<HomeAdminPage> {
     'products': 'Daftar produk',
   }[key] ?? key;
 
-  IconData _icon(String key) => {
-    'header': Icons.storefront_outlined,
-    'search': Icons.search,
-    'banner': Icons.view_carousel_outlined,
-    'announcement': Icons.campaign_outlined,
-    'categories': Icons.category_outlined,
-    'products': Icons.grid_view_rounded,
-  }[key] ?? Icons.widgets_outlined;
-
   String _dateLabel(DateTime? date) => date == null ? 'Tidak dijadwalkan' : '${date.day}/${date.month}/${date.year}';
 
   Future<void> _pickDate(bool isStart) async {
