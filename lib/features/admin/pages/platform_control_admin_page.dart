@@ -97,6 +97,7 @@ class _PlatformControlAdminPageState extends State<PlatformControlAdminPage>
           final n = num.tryParse(_inputs[key]!.text.trim());
           if (n == null || n < 0) { throw FormatException('Nilai angka tidak valid: ' + (f['l'] as String)); }
           if (key == 'serviceFeePercent' && n > 100) { throw const FormatException('Biaya layanan maksimal 100%.'); }
+          if ((key == 'minimumServiceFee' || key == 'cancellationWindowMinutes') && n % 1 != 0) { throw FormatException((f['l'] as String) + ' harus bilangan bulat.'); }
           values[key] = n;
         } else {
           values[key] = _inputs[key]!.text.trim();
