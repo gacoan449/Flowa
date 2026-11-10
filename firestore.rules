@@ -236,7 +236,7 @@ service cloud.firestore {
           && chatIsNotBlocked()
           && request.resource.data.senderId == request.auth.uid
           && request.resource.data.keys().hasOnly([
-            'senderId', 'text', 'type', 'mediaUrl',
+            'senderId', 'text', 'type', 'mediaUrl', 'durationMs',
             'createdAt', 'deliveredTo', 'readBy'
           ])
           && request.resource.data.type in ['text', 'image', 'audio']
@@ -250,6 +250,15 @@ service cloud.firestore {
               request.resource.data.type in ['image', 'audio']
               && request.resource.data.mediaUrl is string
               && request.resource.data.mediaUrl.size() > 0
+            )
+          )
+          && (
+            !request.resource.data.keys().hasAny(['durationMs'])
+            || (
+              request.resource.data.type == 'audio'
+              && request.resource.data.durationMs is number
+              && request.resource.data.durationMs >= 0
+              && request.resource.data.durationMs <= 3600000
             )
           )
           && request.resource.data.deliveredTo is list
