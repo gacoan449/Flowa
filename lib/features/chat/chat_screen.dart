@@ -746,6 +746,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   : const Icon(Icons.send_rounded, color: Colors.white, size: 21))))),
           ]),
           ]),
+          ),
         ),
       ]),
     );
