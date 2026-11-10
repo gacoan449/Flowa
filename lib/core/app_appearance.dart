@@ -92,11 +92,32 @@ class AppAppearance {
     final buttonHeight = number(config['buttonHeight'], 48).clamp(36.0, 72.0).toDouble();
     final scheme = ColorScheme.fromSeed(seedColor: primary, brightness: brightness,
       surface: surface, primary: primary, secondary: accent);
+    final rawBackgrounds = config['screenBackgrounds'] is Map
+        ? Map<String, dynamic>.from(config['screenBackgrounds'] as Map) : <String, dynamic>{};
+    final screenBackgrounds = <String, Color>{
+      for (final entry in rawBackgrounds.entries)
+        entry.key: color(entry.value, scaffold.value),
+    };
+    final rawNavigation = config['navigation'] is Map
+        ? Map<String, dynamic>.from(config['navigation'] as Map) : <String, dynamic>{};
+    final navigation = <String, String>{
+      for (final entry in rawNavigation.entries) entry.key: entry.value.toString(),
+    };
     final buttonShape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius));
+    final buttonBackground = config['buttonStyle'] == 'soft'
+        ? scheme.secondaryContainer
+        : (config['buttonStyle'] == 'outlined' ? surface : primary);
+    final buttonForeground = config['buttonStyle'] == 'soft'
+        ? scheme.onSecondaryContainer
+        : (config['buttonStyle'] == 'outlined' ? primary : scheme.onPrimary);
     return ThemeData(
       useMaterial3: true,
+      extensions: <ThemeExtension<dynamic>>[
+        FlowaDesignTokens(screenBackgrounds: screenBackgrounds, navigation: navigation),
+      ],
       brightness: brightness,
       colorScheme: scheme,
+      textTheme: ThemeData(brightness: brightness).textTheme.apply(bodyColor: text, displayColor: text),
       scaffoldBackgroundColor: scaffold,
       canvasColor: scaffold,
       iconTheme: IconThemeData(size: iconSize, color: scheme.onSurfaceVariant),
@@ -109,6 +130,8 @@ class AppAppearance {
         margin: const EdgeInsets.all(4),
       ),
       filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(
+        backgroundColor: buttonBackground, foregroundColor: buttonForeground,
+        side: config['buttonStyle'] == 'outlined' ? BorderSide(color: primary) : BorderSide.none,
         minimumSize: Size(0, buttonHeight), shape: buttonShape,
         textStyle: const TextStyle(fontWeight: FontWeight.w700))),
       elevatedButtonTheme: ElevatedButtonThemeData(style: ElevatedButton.styleFrom(
