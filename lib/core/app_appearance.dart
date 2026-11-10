@@ -39,6 +39,11 @@ class AppAppearance {
       'upload': 0xFFF5F7FB,
       'profile': 0xFFF6F8FC,
       'settings': 0xFFF6F8FC,
+      'favorites': 0xFFF6F8FC,
+      'orders': 0xFFF6F8FC,
+      'myListings': 0xFFF6F8FC,
+      'sellerStore': 0xFFF6F8FC,
+      'discover': 0xFFF6F8FC,
     },
     'navigation': <String, dynamic>{
       'homeLabel': 'Beranda', 'homeIcon': 'home',
