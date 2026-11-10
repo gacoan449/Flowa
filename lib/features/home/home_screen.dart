@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../../core/app_appearance.dart';
 import '../products/product_upload_screen.dart';
 import '../marketplace/marketplace_screen.dart';
 import '../marketplace/marketplace_search_screen.dart';
@@ -216,13 +217,14 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       final brightness = dark ? Brightness.dark : Brightness.light;
+      final design = Theme.of(context).extension<FlowaDesignTokens>();
       return Theme(
         data: Theme.of(context).copyWith(
           brightness: brightness,
           colorScheme: ColorScheme.fromSeed(seedColor: primary, brightness: brightness),
         ),
         child: Scaffold(
-          backgroundColor: dark && background.value == 0xFFF7F9FC ? const Color(0xFF101827) : background,
+          backgroundColor: design?.backgroundFor('home', background) ?? (dark && background.value == 0xFFF7F9FC ? const Color(0xFF101827) : background),
           body: SafeArea(
             child: SingleChildScrollView(
               child: Column(
@@ -237,11 +239,19 @@ class _HomeScreenState extends State<HomeScreen> {
               if (index == 2) Navigator.push(context, MaterialPageRoute(builder: (_) => const ProductUploadScreen()));
               if (index == 3) Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
             },
-            destinations: const [
-              NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Beranda'),
-              NavigationDestination(icon: Icon(Icons.chat_bubble_outline), label: 'Chat'),
-              NavigationDestination(icon: Icon(Icons.add_circle_outline), label: 'Pasang Iklan'),
-              NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profil'),
+            destinations: [
+              NavigationDestination(
+                icon: Icon(AppAppearance.icon(design?.navigation['homeIcon'] ?? 'home_outline')),
+                label: design?.navigation['homeLabel'] ?? 'Beranda'),
+              NavigationDestination(
+                icon: Icon(AppAppearance.icon(design?.navigation['chatIcon'] ?? 'chat_outline')),
+                label: design?.navigation['chatLabel'] ?? 'Chat'),
+              NavigationDestination(
+                icon: Icon(AppAppearance.icon(design?.navigation['uploadIcon'] ?? 'add_outline')),
+                label: design?.navigation['uploadLabel'] ?? 'Pasang Iklan'),
+              NavigationDestination(
+                icon: Icon(AppAppearance.icon(design?.navigation['profileIcon'] ?? 'person_outline')),
+                label: design?.navigation['profileLabel'] ?? 'Profil'),
             ],
           ),
         ),
