@@ -31,6 +31,12 @@ service cloud.firestore {
           && permission in request.auth.token.permissions);
     }
 
+    function platformEnabled(flag) {
+      let configPath = /databases/$(database)/documents/app_config/platform;
+      return !exists(configPath)
+        || get(configPath).data.get(flag, true) == true;
+    }
+
     // ==============================
     // USERS / PROFIL PRIVAT
     // ==============================
@@ -97,8 +103,8 @@ service cloud.firestore {
       allow read: if true;
 
       allow create: if signedIn()
-        && get(/databases/$(database)/documents/app_config/platform).data.get('adsEnabled', true) == true
-        && get(/databases/$(database)/documents/app_config/platform).data.get('maintenanceMode', false) == false
+        && platformEnabled('adsEnabled')
+        && platformEnabled('maintenanceMode') == false
         && request.resource.data.sellerId == request.auth.uid
         && request.resource.data.title is string
         && request.resource.data.price is number
@@ -267,7 +273,7 @@ service cloud.firestore {
         // Mendukung pesan teks, emoji, foto, dan voice note.
         // Untuk foto/audio, text boleh kosong selama mediaUrl tersedia.
         allow create: if isChatParticipant()
-          && get(/databases/$(database)/documents/app_config/platform).data.get('chatEnabled', true) == true
+          && platformEnabled('chatEnabled')
           && get(/databases/$(database)/documents/app_config/platform).data.get('maintenanceMode', false) == false
           && chatIsNotBlocked()
           && request.resource.data.senderId == request.auth.uid
