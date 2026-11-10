@@ -36,7 +36,6 @@ class _PlatformControlAdminPageState extends State<PlatformControlAdminPage>
       {'k':'cancellationWindowMinutes','l':'Batas pembatalan (menit)','t':'n','d':'30'},
       {'k':'returnsEnabled','l':'Pengajuan pengembalian aktif','t':'b','d':false},
       {'k':'disputesEnabled','l':'Pusat sengketa aktif','t':'b','d':false},
-      {'k':'orderStatusLabels','l':'Label status pesanan (pisahkan koma)','t':'s','d':'Menunggu, Diproses, Dikirim, Selesai, Dibatalkan'},
     ],
     'User & Security': [
       {'k':'adminAuditEnabled','l':'Catat aktivitas admin','t':'b','d':true},
@@ -160,10 +159,10 @@ class _PlatformControlAdminPageState extends State<PlatformControlAdminPage>
                           Text(_description(entry.key)),
                           const SizedBox(height: 16),
                           for (final f in entry.value) _field(f),
-                          if (entry.key == 'Marketplace') _notice('Biaya dan aturan promosi disimpan sebagai kebijakan. Perhitungan checkout, pemotongan saldo, dan penagihan promosi belum terhubung ke backend transaksi.'),
-                          if (entry.key == 'Order Management') _notice('Repo saat ini belum memiliki skema dan alur koleksi pesanan. Pengaturan ini belum mengubah pesanan nyata, pembatalan, retur, atau sengketa.'),
-                          if (entry.key == 'User & Security') _notice('Template role/izin belum memberi hak akses. Hak admin tetap ditentukan Firebase Security Rules/backend tepercaya; jangan gunakan konfigurasi klien sebagai pengaman.'),
-                          if (entry.key == 'System Control') _notice('Sakelar maintenance, notifikasi, dan feature flag tersimpan. Efek globalnya memerlukan pembacaan konfigurasi di masing-masing alur aplikasi/backend.'),
+                          if (entry.key == 'Marketplace') _notice('Biaya layanan dihitung oleh Cloud Functions saat pesanan dibuat. Iklan dan COD dikontrol oleh sakelar di sini. Saldo Flowa dan promosi berbayar belum dibuka karena pendanaan saldo dan billing promosi belum tersedia.'),
+                          if (entry.key == 'Order Management') _notice('Pesanan kini dibuat melalui Cloud Functions, stok diperiksa dan dikurangi secara atomik, status dicatat, dan pembatalan dapat mengembalikan stok. Retur dan sengketa tetap nonaktif sampai kebijakan operasional Flowa ditetapkan.'),
+                          if (entry.key == 'User & Security') _notice('Kelola role staf dari menu Role & Permission. Role diterbitkan sebagai Firebase Custom Claims oleh Cloud Functions dan diperiksa kembali oleh Firestore Rules.'),
+                          if (entry.key == 'System Control') _notice('Maintenance mode membatasi akses pengguna dan penulisan pesanan/iklan/chat. Sakelar push notification diproses oleh Cloud Functions.'),
                         ],
                       );
                     }).toList()),
@@ -195,7 +194,7 @@ class _PlatformControlAdminPageState extends State<PlatformControlAdminPage>
       child: TextField(
         controller: _inputs[key],
         keyboardType: f['t'] == 'n' ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
-        maxLines: key == 'maintenanceMessage' || key == 'returnPolicy' || key == 'appAnnouncement' ? 3 : 1,
+        maxLines: key == 'maintenanceMessage' ? 3 : 1,
         decoration: InputDecoration(labelText: f['l'] as String, border: const OutlineInputBorder()),
       ),
     );
