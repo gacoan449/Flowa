@@ -8,6 +8,7 @@ import 'pages/home_admin_page.dart';
 import 'pages/categories_admin_page.dart';
 import 'pages/announcements_admin_page.dart';
 import 'pages/statistics_admin_page.dart';
+import 'pages/platform_control_admin_page.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -39,6 +40,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
       'Operasional Marketplace':[
         _AdminModule('Iklan & Moderasi','Tinjau produk dan laporan pengguna',Icons.inventory_2,const ProductsAdminPage()),
         _AdminModule('Pengguna','Cari dan kelola status akun',Icons.people_alt_outlined,const UsersAdminPage()),
+      ],
+      'Platform & Sistem':[
+        _AdminModule('Platform Control Center','Navigasi, marketplace, order policy, keamanan, dan sistem',Icons.tune,const PlatformControlAdminPage()),
       ],
       'Layanan & Analitik':[
         _AdminModule('Customer Service','Pantau dan tangani percakapan bantuan',Icons.support_agent,const ChatAdminPage()),
