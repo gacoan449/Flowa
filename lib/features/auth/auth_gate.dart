@@ -90,6 +90,7 @@ class _UserProfileGateState extends State<_UserProfileGate> with WidgetsBindingO
     }
 
     final data = snapshot.data() ?? <String, dynamic>{};
+    if (data['active'] == false) return 'suspended';
     final role = (data['role'] ?? 'user').toString().toLowerCase().trim();
     if (data['role'] == null || role.isEmpty) {
       await ref.set({'role': 'user'}, SetOptions(merge: true))
@@ -146,6 +147,12 @@ class _UserProfileGateState extends State<_UserProfileGate> with WidgetsBindingO
             return _AuthMessage(
               title: 'Email admin belum terverifikasi',
               message: 'Akun flowa324@gmail.com terdeteksi, tetapi Firebase belum menandai email sebagai terverifikasi. Verifikasi email di Firebase Authentication, lalu tekan Coba lagi.',
+              onRetry: _retry,
+            );
+          case 'suspended':
+            return _AuthMessage(
+              title: 'Akun dinonaktifkan',
+              message: 'Akun ini sedang dinonaktifkan oleh admin Flowa. Hubungi Customer Service jika merasa ini keliru.',
               onRetry: _retry,
             );
           case 'user':
