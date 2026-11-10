@@ -41,6 +41,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Duration _audioDuration = Duration.zero;
   late final Future<void> _chatReady;
   Timer? _typingTimer;
+  Timer? _lastSeenRefreshTimer;
   String get _uid => FirebaseAuth.instance.currentUser!.uid;
   String get _chatId { final ids = [_uid, widget.sellerId]..sort(); return ids.join('_'); }
   DocumentReference<Map<String, dynamic>> get _chat =>
@@ -51,6 +52,9 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     _chatReady = _ensureChat();
     _text.addListener(_onTextChanged);
+    _lastSeenRefreshTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) setState(() {});
+    });
     _audioCompleteSub = _audioPlayer.onPlayerComplete.listen((_) {
       if (!mounted) return;
       setState(() {
@@ -381,6 +385,42 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  Future<void> _unblockUser() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Buka blokir pengguna?'),
+        content: const Text('Pengguna ini dapat kembali mengirim pesan kepadamu setelah blokir dibuka.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Buka blokir')),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    try {
+      await _chat.update({
+        'blockedBy': FieldValue.arrayRemove([_uid]),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      final blockRef = FirebaseFirestore.instance
+          .collection('user_blocks').doc('${_uid}_${widget.sellerId}');
+      final block = await blockRef.get();
+      if (block.exists) await blockRef.delete();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Blokir berhasil dibuka.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal membuka blokir: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _reportUser() async {
     final reason = TextEditingController();
     final selected = await showDialog<String>(context: context, builder: (ctx) => AlertDialog(
@@ -408,6 +448,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _typingTimer?.cancel();
+    _lastSeenRefreshTimer?.cancel();
     _recordingTimer?.cancel();
     _text.removeListener(_onTextChanged);
     _setTyping(false);
@@ -446,14 +487,41 @@ class _ChatScreenState extends State<ChatScreen> {
             ]);
           },
         ),
-        actions: [PopupMenuButton<String>(
-          onSelected: (v) { if (v == 'report') _reportUser(); if (v == 'block') _blockUser(); },
-          itemBuilder: (_) => const [
-            PopupMenuItem(value: 'report', child: ListTile(leading: Icon(Icons.flag_outlined), title: Text('Laporkan'))),
-            PopupMenuItem(value: 'block', child: ListTile(leading: Icon(Icons.block_rounded), title: Text('Blokir pengguna'))),
-          ],
-          icon: const Icon(Icons.more_horiz_rounded, color: Color(0xFF536176)),
-        )],
+        actions: [
+          StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            stream: _chat.snapshots(),
+            builder: (context, chatSnapshot) {
+              final blockedBy = List<String>.from(
+                chatSnapshot.data?.data()?['blockedBy'] ?? const [],
+              );
+              final blockedByMe = blockedBy.contains(_uid);
+              return PopupMenuButton<String>(
+                onSelected: (v) {
+                  if (v == 'report') _reportUser();
+                  if (v == 'block') _blockUser();
+                  if (v == 'unblock') _unblockUser();
+                },
+                itemBuilder: (_) => [
+                  const PopupMenuItem(
+                    value: 'report',
+                    child: ListTile(
+                      leading: Icon(Icons.flag_outlined),
+                      title: Text('Laporkan'),
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: blockedByMe ? 'unblock' : 'block',
+                    child: ListTile(
+                      leading: Icon(blockedByMe ? Icons.lock_open_rounded : Icons.block_rounded),
+                      title: Text(blockedByMe ? 'Buka blokir' : 'Blokir pengguna'),
+                    ),
+                  ),
+                ],
+                icon: const Icon(Icons.more_horiz_rounded, color: Color(0xFF536176)),
+              );
+            },
+          ),
+        ],
       ),
       body: Column(children: [
         Container(
