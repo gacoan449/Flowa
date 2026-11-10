@@ -53,6 +53,17 @@ class _UserProfileGateState extends State<_UserProfileGate> with WidgetsBindingO
   }
 
   Future<String> _loadRole() async {
+    // Akun admin ditentukan dari email Firebase Authentication, bukan field role Firestore.
+    final adminEmail = (widget.user.email ?? '').trim().toLowerCase();
+    if (adminEmail == 'flowa324@gmail.com' && widget.user.emailVerified) {
+      try {
+        await ChatProfileService.syncCurrentUser(displayName: widget.user.displayName);
+      } catch (_) {
+        // Sinkronisasi profil chat tidak boleh menghalangi akses admin.
+      }
+      return 'admin';
+    }
+
     final ref = FirebaseFirestore.instance.collection('users').doc(widget.user.uid);
     final snapshot = await ref.get().timeout(const Duration(seconds: 15));
     try {
