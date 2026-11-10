@@ -7,6 +7,8 @@ const db = admin.firestore();
 const messaging = admin.messaging();
 
 async function sendToUser(userId, title, body, data) {
+  const platform = await db.collection("app_config").doc("platform").get();
+  if (platform.data()?.pushNotificationsEnabled === false) return;
   const devices = await db.collection("users").doc(userId).collection("devices").get();
   const tokens = devices.docs.map((doc) => doc.id).filter(Boolean);
   if (tokens.length === 0) return;
@@ -231,8 +233,11 @@ exports.updateMarketplaceOrderStatus = onCall(async (request) => {
     const isSeller = order.sellerId === auth.uid;
     const privileged = hasPermission(auth, "orders") || hasPermission(auth, "disputes");
     const current = order.status;
+    const createdAt = order.createdAt?.toDate ? order.createdAt.toDate().getTime() : 0;
+    const cancelWindowMs = Math.max(0, Number(settings.cancellationWindowMinutes ?? 30)) * 60 * 1000;
+    const insideCancelWindow = createdAt > 0 && Date.now() - createdAt <= cancelWindowMs;
     const buyerCancel = status === "cancelled" && isBuyer &&
-      settings.allowBuyerCancellation !== false &&
+      settings.allowBuyerCancellation !== false && insideCancelWindow &&
       ["awaiting_confirmation", "paid", "confirmed"].includes(current);
     const sellerAction = isSeller && (
       (status === "confirmed" && ["awaiting_confirmation", "paid"].includes(current)) ||
