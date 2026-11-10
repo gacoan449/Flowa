@@ -176,8 +176,12 @@ exports.createMarketplaceOrder = onCall(async (request) => {
     const unitPrice = Number(product.price);
     if (!Number.isSafeInteger(unitPrice) || unitPrice <= 0) throw new HttpsError("failed-precondition", "Harga produk tidak valid.");
     const subtotal = unitPrice * quantity;
-    const feePercent = Math.max(0, Math.min(100, Number(settings.serviceFeePercent || 0)));
-    const minimumFee = Math.max(0, Number(settings.minimumServiceFee || 0));
+    const feePercent = Number(settings.serviceFeePercent || 0);
+    const minimumFee = Number(settings.minimumServiceFee || 0);
+    if (!Number.isFinite(feePercent) || feePercent < 0 || feePercent > 100 ||
+        !Number.isSafeInteger(minimumFee) || minimumFee < 0) {
+      throw new HttpsError("failed-precondition", "Konfigurasi biaya layanan tidak valid. Hubungi admin.");
+    }
     const serviceFee = Math.max(minimumFee, Math.floor(subtotal * feePercent / 100));
     const total = subtotal + serviceFee;
     if (paymentMethod === "wallet") {
