@@ -224,7 +224,7 @@ exports.createMarketplaceOrder = onCall(async (request) => {
 exports.updateMarketplaceOrderStatus = onCall(async (request) => {
   const auth = requireSignedIn(request);
   const { orderId, status, reason } = request.data || {};
-  const allowed = ["confirmed", "processing", "shipped", "completed", "cancelled", "return_requested", "returned", "disputed"];
+  const allowed = ["confirmed", "processing", "shipped", "completed", "cancelled", "return_requested", "returned", "return_rejected", "disputed"];
   if (typeof orderId !== "string" || !allowed.includes(status)) {
     throw new HttpsError("invalid-argument", "Pesanan atau status tidak valid.");
   }
@@ -259,6 +259,7 @@ exports.updateMarketplaceOrderStatus = onCall(async (request) => {
     const adminAction = privileged && (
       (status === "cancelled" && ["awaiting_confirmation", "paid", "confirmed"].includes(current)) ||
       (status === "returned" && ["return_requested", "disputed"].includes(current)) ||
+      (status === "return_rejected" && current === "return_requested") ||
       (status === "completed" && current === "disputed") ||
       (status === "confirmed" && ["awaiting_confirmation", "paid"].includes(current)) ||
       (status === "processing" && current === "confirmed") ||
@@ -304,10 +305,10 @@ exports.updateMarketplaceOrderStatus = onCall(async (request) => {
         openedBy: auth.uid, openedAt: now, updatedAt: now,
       }, { merge: true });
     }
-    if (status === "returned" || (status === "completed" && current === "disputed")) {
+    if (status === "returned" || status === "return_rejected" || (status === "completed" && current === "disputed")) {
       tx.set(caseRef, {
-        status: status === "returned" ? "approved_return" : "resolved",
-        resolution: status === "returned" ? "refund_or_return" : "completed",
+        status: status === "returned" ? "approved_return" : (status === "return_rejected" ? "rejected" : "resolved"),
+        resolution: status === "returned" ? "refund_or_return" : (status === "return_rejected" ? "return_rejected" : "completed"),
         resolutionNote: typeof reason === "string" ? reason.slice(0, 1000) : "",
         resolvedBy: auth.uid, resolvedAt: now, updatedAt: now,
       }, { merge: true });
@@ -352,6 +353,7 @@ const ORDER_STATUS_TEXT = {
   cancelled: "Pesanan dibatalkan",
   return_requested: "Pembeli mengajukan pengembalian",
   returned: "Pengembalian pesanan diproses",
+  return_rejected: "Pengajuan retur ditolak",
   disputed: "Pesanan masuk pusat sengketa",
 };
 
