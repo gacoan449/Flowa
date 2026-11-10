@@ -3,6 +3,10 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ==============================
+    // FUNGSI KEAMANAN DASAR
+    // ==============================
+
     function signedIn() {
       return request.auth != null;
     }
@@ -17,7 +21,10 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
+    // ==============================
     // USERS / PROFIL PRIVAT
+    // ==============================
+
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
 
@@ -46,23 +53,35 @@ service cloud.firestore {
       }
     }
 
-    // PROFIL PUBLIK MINIMAL UNTUK NAMA/FOTO/PRESENCE CHAT
+    // ==============================
+    // PROFIL PUBLIK UNTUK CHAT
+    // Email dan data privat tidak disimpan di sini.
+    // ==============================
+
     match /public_profiles/{userId} {
       allow read: if signedIn();
+
       allow create: if isOwner(userId)
         && request.resource.data.uid == userId
         && request.resource.data.keys().hasOnly([
-          'uid', 'displayName', 'photoUrl', 'isOnline', 'lastSeen', 'updatedAt'
+          'uid', 'displayName', 'photoUrl',
+          'isOnline', 'lastSeen', 'updatedAt'
         ]);
+
       allow update: if isOwner(userId)
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.keys().hasOnly([
-          'uid', 'displayName', 'photoUrl', 'isOnline', 'lastSeen', 'updatedAt'
+          'uid', 'displayName', 'photoUrl',
+          'isOnline', 'lastSeen', 'updatedAt'
         ]);
+
       allow delete: if false;
     }
 
-    // PRODUK / IKLAN
+    // ==============================
+    // PRODUK / IKLAN MARKETPLACE
+    // ==============================
+
     match /products/{productId} {
       allow read: if true;
 
@@ -84,7 +103,9 @@ service cloud.firestore {
         )
         || (
           signedIn()
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reportCount'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'reportCount'
+          ])
           && request.resource.data.get('reportCount', 0)
             == resource.data.get('reportCount', 0) + 1
         );
@@ -92,6 +113,10 @@ service cloud.firestore {
       allow delete: if isAdmin()
         || (signedIn() && resource.data.sellerId == request.auth.uid);
     }
+
+    // ==============================
+    // KATEGORI, BANNER, PENGUMUMAN
+    // ==============================
 
     match /categories/{categoryId} {
       allow read: if true;
@@ -113,7 +138,10 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // ==============================
     // LAPORAN IKLAN / PENGGUNA
+    // ==============================
+
     match /reports/{reportId} {
       allow create: if signedIn()
         && request.resource.data.reporterId == request.auth.uid
@@ -130,8 +158,12 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ==============================
     // CHAT PEMBELI - PENJUAL
+    // ==============================
+
     match /chats/{chatId} {
+
       function isParticipant() {
         return signedIn()
           && request.auth.uid in resource.data.participants;
@@ -145,21 +177,23 @@ service cloud.firestore {
 
       allow read: if isParticipant();
 
-      // Mengizinkan update metadata, status mengetik, dan blokir.
-      // Peserta hanya boleh menambahkan dirinya sendiri ke blockedBy.
+      // Metadata percakapan, typing indicator, dan blokir.
+      // Peserta tidak boleh mengganti daftar peserta.
       allow update: if isParticipant()
         && request.resource.data.participants == resource.data.participants
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'participants', 'productId', 'productTitle', 'lastMessage',
-          'lastMessageAt', 'updatedAt', 'typing', 'blockedBy'
+          'participants', 'productId', 'productTitle',
+          'lastMessage', 'lastMessageAt', 'updatedAt',
+          'typing', 'blockedBy'
         ])
         && (
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['blockedBy'])
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            'blockedBy'
+          ])
           || (
             request.resource.data.get('blockedBy', []) is list
-            && request.resource.data.get('blockedBy', []).hasAll(
-              resource.data.get('blockedBy', [])
-            )
+            && request.resource.data.get('blockedBy', [])
+              .hasAll(resource.data.get('blockedBy', []))
             && request.auth.uid in request.resource.data.get('blockedBy', [])
           )
         );
@@ -167,8 +201,11 @@ service cloud.firestore {
       allow delete: if false;
 
       match /messages/{messageId} {
+
         function chatData() {
-          return get(/databases/$(database)/documents/chats/$(chatId)).data;
+          return get(
+            /databases/$(database)/documents/chats/$(chatId)
+          ).data;
         }
 
         function isChatParticipant() {
@@ -176,12 +213,17 @@ service cloud.firestore {
             && request.auth.uid in chatData().participants;
         }
 
+        function chatIsNotBlocked() {
+          return !chatData().get('blockedBy', [])
+            .hasAny(chatData().participants);
+        }
+
         allow read: if isChatParticipant();
 
-        // Pesan teks, emoji, foto, dan voice note.
-        // Foto/voice note boleh memiliki text kosong selama mediaUrl tersedia.
+        // Mendukung pesan teks, emoji, foto, dan voice note.
+        // Untuk foto/audio, text boleh kosong selama mediaUrl tersedia.
         allow create: if isChatParticipant()
-          && chatData().get('blockedBy', []).size() == 0
+          && chatIsNotBlocked()
           && request.resource.data.senderId == request.auth.uid
           && request.resource.data.keys().hasOnly([
             'senderId', 'text', 'type', 'mediaUrl',
@@ -205,31 +247,45 @@ service cloud.firestore {
           && request.resource.data.readBy is list
           && request.auth.uid in request.resource.data.readBy;
 
-        // Tanda diterima/dibaca dan reaksi emoji pada pesan.
+        // Status diterima/dibaca dan reaksi emoji.
+        // Pengguna hanya boleh menambahkan UID miliknya ke receipt,
+        // dan hanya boleh mengubah reaksinya sendiri.
         allow update: if isChatParticipant()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'deliveredTo', 'readBy', 'reactions', 'updatedAt'
           ])
           && (
-            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['readBy'])
-            || (
-              request.resource.data.readBy is list
-              && request.resource.data.readBy.hasAll(resource.data.get('readBy', []))
-              && request.auth.uid in request.resource.data.readBy
-            )
-          )
-          && (
-            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['deliveredTo'])
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+              'deliveredTo'
+            ])
             || (
               request.resource.data.deliveredTo is list
-              && request.resource.data.deliveredTo.hasAll(resource.data.get('deliveredTo', []))
-              && request.auth.uid in request.resource.data.deliveredTo
+              && request.resource.data.deliveredTo.toSet()
+                .difference(resource.data.get('deliveredTo', []).toSet())
+                .hasOnly([request.auth.uid])
             )
           )
           && (
-            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['reactions'])
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+              'readBy'
+            ])
+            || (
+              request.resource.data.readBy is list
+              && request.resource.data.readBy.toSet()
+                .difference(resource.data.get('readBy', []).toSet())
+                .hasOnly([request.auth.uid])
+            )
+          )
+          && (
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+              'reactions'
+            ])
             || (
               request.resource.data.reactions is map
+              && request.resource.data.reactions
+                .diff(resource.data.get('reactions', {}))
+                .affectedKeys()
+                .hasOnly([request.auth.uid])
               && request.resource.data.reactions.get(request.auth.uid, '') is string
               && request.resource.data.reactions.get(request.auth.uid, '').size() <= 8
             )
@@ -239,26 +295,38 @@ service cloud.firestore {
       }
     }
 
+    // ==============================
     // BLOKIR PENGGUNA
+    // ==============================
+
     match /user_blocks/{blockId} {
-      allow read: if signedIn() && resource.data.blockerId == request.auth.uid;
+      allow read: if signedIn()
+        && resource.data.blockerId == request.auth.uid;
 
       allow create: if signedIn()
         && request.resource.data.blockerId == request.auth.uid
         && request.resource.data.blockedUserId is string
         && request.resource.data.blockedUserId != request.auth.uid;
 
-      allow delete: if signedIn() && resource.data.blockerId == request.auth.uid;
+      allow delete: if signedIn()
+        && resource.data.blockerId == request.auth.uid;
+
       allow update: if false;
     }
 
-    // CUSTOMER SERVICE
+    // ==============================
+    // CUSTOMER SERVICE / CHAT ADMIN
+    // ==============================
+
     match /support_threads/{threadId} {
       allow create: if signedIn()
         && request.resource.data.userId == request.auth.uid;
 
       allow read: if signedIn()
-        && (resource.data.userId == request.auth.uid || isAdmin());
+        && (
+          resource.data.userId == request.auth.uid
+          || isAdmin()
+        );
 
       allow update: if signedIn()
         && (
@@ -275,7 +343,9 @@ service cloud.firestore {
         function canUseThread() {
           return signedIn()
             && (
-              get(/databases/$(database)/documents/support_threads/$(threadId)).data.userId == request.auth.uid
+              get(
+                /databases/$(database)/documents/support_threads/$(threadId)
+              ).data.userId == request.auth.uid
               || isAdmin()
             );
         }
@@ -291,7 +361,10 @@ service cloud.firestore {
       }
     }
 
-    // DEFAULT DENY
+    // ==============================
+    // DEFAULT: TOLAK AKSES LAINNYA
+    // ==============================
+
     match /{document=**} {
       allow read, write: if false;
     }
