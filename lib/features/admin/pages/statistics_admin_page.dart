@@ -1,8 +1,21 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-class StatisticsAdminPage extends StatelessWidget {
+class StatisticsAdminPage extends StatefulWidget {
   const StatisticsAdminPage({super.key});
+
+  @override
+  State<StatisticsAdminPage> createState() => _StatisticsAdminPageState();
+}
+
+class _StatisticsAdminPageState extends State<StatisticsAdminPage> {
+  late Future<Map<String, int>> _statsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _statsFuture = _load();
+  }
 
   Future<int> _count(String collection, {String? field, Object? equals}) async {
     Query<Map<String, dynamic>> query =
@@ -37,6 +50,12 @@ class StatisticsAdminPage extends StatelessWidget {
     };
   }
 
+  Future<void> _refresh() async {
+    final next = _load();
+    setState(() => _statsFuture = next);
+    await next;
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
@@ -44,19 +63,32 @@ class StatisticsAdminPage extends StatelessWidget {
       actions: [
         IconButton(
           tooltip: 'Muat ulang',
-          onPressed: () => (context as Element).markNeedsBuild(),
+          onPressed: _refresh,
           icon: const Icon(Icons.refresh),
         ),
       ],
     ),
     body: FutureBuilder<Map<String, int>>(
-      future: _load(),
+      future: _statsFuture,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(20),
-              child: Text('Statistik gagal dimuat: ${snapshot.error}'),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.cloud_off_outlined, size: 42),
+                  const SizedBox(height: 10),
+                  Text('Statistik gagal dimuat: ${snapshot.error}', textAlign: TextAlign.center),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    onPressed: _refresh,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Coba lagi'),
+                  ),
+                ],
+              ),
             ),
           );
         }
@@ -65,11 +97,7 @@ class StatisticsAdminPage extends StatelessWidget {
         }
         final entries = snapshot.data!.entries.toList();
         return RefreshIndicator(
-          onRefresh: () async {
-            // Rebuild the page so aggregate counts are requested again.
-            (context as Element).markNeedsBuild();
-            await Future<void>.delayed(const Duration(milliseconds: 300));
-          },
+          onRefresh: _refresh,
           child: GridView.builder(
             padding: const EdgeInsets.all(14),
             physics: const AlwaysScrollableScrollPhysics(),
