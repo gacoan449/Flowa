@@ -86,10 +86,10 @@ class AppAppearance {
     final surface = color(config['surfaceColor'], dark ? 0xFF1B2638 : 0xFFFFFFFF);
     final scaffold = color(config['scaffoldColor'], dark ? 0xFF101827 : 0xFFF6F8FC);
     final text = color(config['textColor'], dark ? 0xFFF4F7FC : 0xFF172033);
-    final radius = number(config['cornerRadius'], 18).clamp(0.0, 36.0);
-    final buttonRadius = number(config['buttonRadius'], 14).clamp(0.0, 36.0);
-    final iconSize = number(config['iconSize'], 22).clamp(14.0, 36.0);
-    final buttonHeight = number(config['buttonHeight'], 48).clamp(36.0, 72.0);
+    final radius = number(config['cornerRadius'], 18).clamp(0.0, 36.0).toDouble();
+    final buttonRadius = number(config['buttonRadius'], 14).clamp(0.0, 36.0).toDouble();
+    final iconSize = number(config['iconSize'], 22).clamp(14.0, 36.0).toDouble();
+    final buttonHeight = number(config['buttonHeight'], 48).clamp(36.0, 72.0).toDouble();
     final scheme = ColorScheme.fromSeed(seedColor: primary, brightness: brightness,
       surface: surface, primary: primary, secondary: accent);
     final buttonShape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius));
