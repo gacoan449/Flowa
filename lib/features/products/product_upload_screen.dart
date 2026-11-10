@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../../core/app_appearance.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -123,7 +124,7 @@ class _ProductUploadScreenState extends State<ProductUploadScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: surface,
+    backgroundColor: Theme.of(context).extension<FlowaDesignTokens>()?.backgroundFor('upload', Theme.of(context).scaffoldBackgroundColor),
     appBar: AppBar(title: const Text('Pasang Iklan', style: TextStyle(fontWeight: FontWeight.w700))),
     body: Form(
       key: _formKey,
