@@ -21,7 +21,15 @@ class _SettingsScreenState extends State<SettingsScreen>{
   }
   Future<void> _pref(String key,bool value)async{
     final u=FirebaseAuth.instance.currentUser;if(u==null)return;
-    setState(()=>{if(key=='prefNotifications')_notifications=value else if(key=='prefShowOnline')_showOnline=value else _showActivity=value});
+    setState(() {
+      if (key == 'prefNotifications') {
+        _notifications = value;
+      } else if (key == 'prefShowOnline') {
+        _showOnline = value;
+      } else {
+        _showActivity = value;
+      }
+    });
     try{await FirebaseFirestore.instance.collection('users').doc(u.uid).set({key:value,'updatedAt':FieldValue.serverTimestamp()},SetOptions(merge:true));}
     catch(_){if(!mounted)return;ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Pengaturan gagal disimpan. Coba lagi.')));_loadPreferences();}
   }
