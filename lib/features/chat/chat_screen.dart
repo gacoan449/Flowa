@@ -32,6 +32,9 @@ class _ChatScreenState extends State<ChatScreen> {
   String? _playingUrl;
   final AudioRecorder _recorder = AudioRecorder();
   final AudioPlayer _audioPlayer = AudioPlayer();
+  StreamSubscription<void>? _audioCompleteSub;
+  Duration _audioPosition = Duration.zero;
+  Duration _audioDuration = Duration.zero;
   late final Future<void> _chatReady;
   Timer? _typingTimer;
   String get _uid => FirebaseAuth.instance.currentUser!.uid;
@@ -44,6 +47,21 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     _chatReady = _ensureChat();
     _text.addListener(_onTextChanged);
+    _audioCompleteSub = _audioPlayer.onPlayerComplete.listen((_) {
+      if (!mounted) return;
+      setState(() {
+        _playingUrl = null;
+        _audioPosition = Duration.zero;
+      });
+    });
+    _audioPlayer.onPositionChanged.listen((position) {
+      if (!mounted) return;
+      setState(() => _audioPosition = position);
+    });
+    _audioPlayer.onDurationChanged.listen((duration) {
+      if (!mounted) return;
+      setState(() => _audioDuration = duration);
+    });
   }
 
   Future<void> _ensureChat() async {
@@ -183,8 +201,22 @@ class _ChatScreenState extends State<ChatScreen> {
         if (mounted) setState(() => _recording = false);
         if (path == null) return;
         setState(() => _uploading = true);
+        final probe = AudioPlayer();
+        Duration? recordedDuration;
+        try {
+          await probe.setSource(DeviceFileSource(path));
+          recordedDuration = await probe.getDuration();
+        } finally {
+          await probe.dispose();
+        }
         final url = await CloudinaryService.uploadAudio(File(path));
-        await _sendPayload({'type': 'audio', 'mediaUrl': url, 'text': ''}, '🎤 Pesan suara');
+        await _sendPayload({
+          'type': 'audio',
+          'mediaUrl': url,
+          'text': '',
+          if (recordedDuration != null)
+            'durationMs': recordedDuration.inMilliseconds,
+        }, '🎤 Pesan suara');
       } catch (e) {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Pesan suara gagal dikirim: $e')));
       } finally {
@@ -206,18 +238,40 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  Future<void> _playAudio(String url) async {
+  String _formatAudioTime(Duration duration) {
+    final minutes = duration.inMinutes.toString().padLeft(2, '0');
+    final seconds = (duration.inSeconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
+  }
+
+  Future<void> _playAudio(String url, {Duration? knownDuration}) async {
     try {
       if (_playingUrl == url) {
         await _audioPlayer.stop();
-        if (mounted) setState(() => _playingUrl = null);
-      } else {
-        await _audioPlayer.stop();
-        await _audioPlayer.play(UrlSource(url));
-        if (mounted) setState(() => _playingUrl = url);
+        if (mounted) {
+          setState(() {
+            _playingUrl = null;
+            _audioPosition = Duration.zero;
+          });
+        }
+        return;
       }
+      await _audioPlayer.stop();
+      if (mounted) {
+        setState(() {
+          _playingUrl = url;
+          _audioPosition = Duration.zero;
+          _audioDuration = knownDuration ?? Duration.zero;
+        });
+      }
+      await _audioPlayer.play(UrlSource(url));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Audio tidak dapat diputar: $e')));
+      if (mounted) {
+        setState(() => _playingUrl = null);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Audio tidak dapat diputar: $e')),
+        );
+      }
     }
   }
 
@@ -297,6 +351,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _typingTimer?.cancel();
     _text.removeListener(_onTextChanged);
     _setTyping(false);
+    _audioCompleteSub?.cancel();
     _recorder.dispose();
     _audioPlayer.dispose();
     _text.dispose(); _focus.dispose(); super.dispose();
@@ -403,12 +458,51 @@ class _ChatScreenState extends State<ChatScreen> {
                               ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.network(media, width: 220, fit: BoxFit.cover,
                                 errorBuilder: (_, __, ___) => const Padding(padding: EdgeInsets.all(12), child: Text('Foto tidak dapat dimuat'))))
                             else if (type == 'audio' && media.isNotEmpty)
-                              Row(mainAxisSize: MainAxisSize.min, children: [
-                                IconButton(onPressed: () => _playAudio(media),
-                                  icon: Icon(_playingUrl == media ? Icons.stop_circle_rounded : Icons.play_circle_fill_rounded,
-                                    color: mine ? Colors.white : const Color(0xFF356DEB), size: 30)),
-                                Text('Pesan suara', style: TextStyle(color: mine ? Colors.white : const Color(0xFF26354B), fontSize: 13)),
-                              ])
+                              InkWell(
+                                onTap: () => _playAudio(
+                                  media,
+                                  knownDuration: Duration(
+                                    milliseconds: (data['durationMs'] as num?)?.toInt() ?? 0,
+                                  ),
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 3),
+                                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                    Icon(
+                                      _playingUrl == media
+                                          ? Icons.stop_circle_rounded
+                                          : Icons.play_circle_fill_rounded,
+                                      color: mine ? Colors.white : const Color(0xFF356DEB),
+                                      size: 34,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text('Pesan suara', style: TextStyle(
+                                          color: mine ? Colors.white : const Color(0xFF26354B),
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700,
+                                        )),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          _playingUrl == media
+                                              ? '${_formatAudioTime(_audioPosition)} / ${_formatAudioTime(_audioDuration)}'
+                                              : _formatAudioTime(Duration(
+                                                  milliseconds: (data['durationMs'] as num?)?.toInt() ?? 0,
+                                                )),
+                                          style: TextStyle(
+                                            color: mine ? Colors.white70 : const Color(0xFF8793A5),
+                                            fontSize: 10,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ]),
+                                ),
+                              )
                             else
                               Align(alignment: Alignment.centerLeft, child: Text(value, style: TextStyle(color: mine ? Colors.white : const Color(0xFF26354B), fontSize: 14, height: 1.4))),
                             const SizedBox(height: 5),
