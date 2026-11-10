@@ -125,6 +125,49 @@ class _BannersAdminPageState extends State<BannersAdminPage> {
     title.dispose();
   }
 
+
+  Future<void> _setBannerSchedule(
+    DocumentReference<Map<String, dynamic>> ref,
+    Map<String, dynamic> data,
+  ) async {
+    final now = DateTime.now();
+    final currentStart = data['startAt'] is Timestamp
+        ? (data['startAt'] as Timestamp).toDate() : null;
+    final currentEnd = data['endAt'] is Timestamp
+        ? (data['endAt'] as Timestamp).toDate() : null;
+    final start = await showDatePicker(
+      context: context,
+      initialDate: currentStart ?? now,
+      firstDate: DateTime(2024),
+      lastDate: DateTime(2035),
+      helpText: 'Tanggal mulai tayang',
+    );
+    if (start == null || !mounted) return;
+    final end = await showDatePicker(
+      context: context,
+      initialDate: currentEnd ?? start,
+      firstDate: start,
+      lastDate: DateTime(2035),
+      helpText: 'Tanggal akhir tayang',
+    );
+    if (end == null || !mounted) return;
+    await ref.update({
+      'startAt': Timestamp.fromDate(DateTime(start.year, start.month, start.day)),
+      'endAt': Timestamp.fromDate(DateTime(end.year, end.month, end.day, 23, 59, 59)),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> _clearBannerSchedule(
+    DocumentReference<Map<String, dynamic>> ref,
+  ) async {
+    await ref.update({
+      'startAt': FieldValue.delete(),
+      'endAt': FieldValue.delete(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   Future<void> _deleteBanner(DocumentReference<Map<String, dynamic>> ref) async {
     final yes = await showDialog<bool>(
       context: context,
@@ -196,14 +239,18 @@ class _BannersAdminPageState extends State<BannersAdminPage> {
                         ListTile(
                           contentPadding: EdgeInsets.zero,
                           title: Text((data['title'] ?? 'Banner').toString()),
-                          subtitle: Text(active ? 'Tayang di beranda' : 'Disembunyikan'),
+                          subtitle: Text(active ? ((data['startAt'] is Timestamp || data['endAt'] is Timestamp) ? 'Tayang sesuai jadwal' : 'Tayang di beranda') : 'Disembunyikan'),
                           trailing: PopupMenuButton<String>(
                             onSelected: (value) {
                               if (value == 'edit') _editBanner(doc.reference, data);
+                              if (value == 'schedule') _setBannerSchedule(doc.reference, data);
+                              if (value == 'clear_schedule') _clearBannerSchedule(doc.reference);
                               if (value == 'delete') _deleteBanner(doc.reference);
                             },
                             itemBuilder: (_) => const [
                               PopupMenuItem(value: 'edit', child: Text('Edit judul')),
+                              PopupMenuItem(value: 'schedule', child: Text('Atur jadwal tayang')),
+                              PopupMenuItem(value: 'clear_schedule', child: Text('Hapus jadwal')),
                               PopupMenuItem(value: 'delete', child: Text('Hapus')),
                             ],
                           ),
