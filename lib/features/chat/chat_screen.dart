@@ -130,7 +130,7 @@ class _ChatScreenState extends State<ChatScreen> {
     await _sendPayload({'text': value, 'type': 'text'}, value);
   }
 
-  Future<void> _sendPayload(Map<String, dynamic> payload, String preview) async {
+  Future<bool> _sendPayload(Map<String, dynamic> payload, String preview) async {
     if (_sending) return;
     setState(() => _sending = true);
     try {
@@ -151,11 +151,13 @@ class _ChatScreenState extends State<ChatScreen> {
       await batch.commit();
       _text.clear();
       _focus.requestFocus();
+      return true;
     } on FirebaseException catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Pesan gagal dikirim (${e.code}): ${e.message ?? ''}')));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Pesan gagal dikirim: $e')));
     } finally { if (mounted) setState(() => _sending = false); }
+    return false;
   }
 
   Future<void> _pickImage() async {
@@ -261,14 +263,14 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() => _uploading = true);
     try {
       final url = await CloudinaryService.uploadAudio(File(path));
-      await _sendPayload({
+      final sent = await _sendPayload({
         'type': 'audio',
         'mediaUrl': url,
         'text': '',
         if (_recordedAudioDuration != null)
           'durationMs': _recordedAudioDuration!.inMilliseconds,
       }, '🎤 Pesan suara');
-      if (mounted && !_sending) {
+      if (sent && mounted) {
         setState(() {
           _recordedAudioPath = null;
           _recordedAudioDuration = null;
