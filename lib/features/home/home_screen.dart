@@ -63,19 +63,25 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         if (config['showSearch'] != false && visibility['search'] != false)
-          'search': Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 4),
-            child: TextField(
-              readOnly: true,
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MarketplaceSearchScreen())),
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.search),
-                hintText: (config['searchHint'] ?? 'Cari barang di sekitar Anda...').toString(),
-                filled: true,
-                fillColor: Theme.of(context).colorScheme.surface,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-              ),
-            ),
+          'search': StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            stream: FirebaseFirestore.instance.collection('app_config').doc('platform').snapshots(),
+            builder: (context, platformSnapshot) {
+              if (platformSnapshot.data?.data()?['searchEnabled'] == false) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 4),
+                child: TextField(
+                  readOnly: true,
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MarketplaceSearchScreen())),
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.search),
+                    hintText: (config['searchHint'] ?? 'Cari barang di sekitar Anda...').toString(),
+                    filled: true,
+                    fillColor: Theme.of(context).colorScheme.surface,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                  ),
+                ),
+              );
+            },
           ),
         if (config['showBanner'] != false && visibility['banner'] != false && promoWindow)
           'banner': StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -233,26 +239,39 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          bottomNavigationBar: NavigationBar(
-            onDestinationSelected: (index) {
-              if (index == 1) Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatInboxScreen()));
-              if (index == 2) Navigator.push(context, MaterialPageRoute(builder: (_) => const ProductUploadScreen()));
-              if (index == 3) Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
+          bottomNavigationBar: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            stream: FirebaseFirestore.instance.collection('app_config').doc('platform').snapshots(),
+            builder: (context, platformSnapshot) {
+              final platform = platformSnapshot.data?.data() ?? <String, dynamic>{};
+              final destinations = <NavigationDestination>[
+                NavigationDestination(
+                  icon: Icon(AppAppearance.icon(design?.navigation['homeIcon'] ?? 'home_outline')),
+                  label: design?.navigation['homeLabel'] ?? 'Beranda'),
+                if (platform['chatEnabled'] != false)
+                  NavigationDestination(
+                    icon: Icon(AppAppearance.icon(design?.navigation['chatIcon'] ?? 'chat_outline')),
+                    label: design?.navigation['chatLabel'] ?? 'Chat'),
+                if (platform['uploadEnabled'] != false && platform['adsEnabled'] != false)
+                  NavigationDestination(
+                    icon: Icon(AppAppearance.icon(design?.navigation['uploadIcon'] ?? 'add_outline')),
+                    label: design?.navigation['uploadLabel'] ?? 'Pasang Iklan'),
+                NavigationDestination(
+                  icon: Icon(AppAppearance.icon(design?.navigation['profileIcon'] ?? 'person_outline')),
+                  label: design?.navigation['profileLabel'] ?? 'Profil'),
+              ];
+              final actions = <VoidCallback>[
+                () {},
+                if (platform['chatEnabled'] != false)
+                  () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatInboxScreen())),
+                if (platform['uploadEnabled'] != false && platform['adsEnabled'] != false)
+                  () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProductUploadScreen())),
+                () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
+              ];
+              return NavigationBar(
+                onDestinationSelected: (index) { if (index < actions.length) actions[index](); },
+                destinations: destinations,
+              );
             },
-            destinations: [
-              NavigationDestination(
-                icon: Icon(AppAppearance.icon(design?.navigation['homeIcon'] ?? 'home_outline')),
-                label: design?.navigation['homeLabel'] ?? 'Beranda'),
-              NavigationDestination(
-                icon: Icon(AppAppearance.icon(design?.navigation['chatIcon'] ?? 'chat_outline')),
-                label: design?.navigation['chatLabel'] ?? 'Chat'),
-              NavigationDestination(
-                icon: Icon(AppAppearance.icon(design?.navigation['uploadIcon'] ?? 'add_outline')),
-                label: design?.navigation['uploadLabel'] ?? 'Pasang Iklan'),
-              NavigationDestination(
-                icon: Icon(AppAppearance.icon(design?.navigation['profileIcon'] ?? 'person_outline')),
-                label: design?.navigation['profileLabel'] ?? 'Profil'),
-            ],
           ),
         ),
       );
