@@ -267,6 +267,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProductUploadScreen())),
                 () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
               ];
+              if (platform['navigationEnabled'] == false) return const SizedBox.shrink();
               return NavigationBar(
                 onDestinationSelected: (index) { if (index < actions.length) actions[index](); },
                 destinations: destinations,
