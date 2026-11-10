@@ -36,7 +36,7 @@ class OrdersAdminPage extends StatelessWidget {
 
   Future<void> _resolveCase(BuildContext context, String id, String status) async {
     final controller = TextEditingController();
-    final title = status == 'returned' ? 'Setujui retur' : 'Selesaikan sengketa';
+    final title = status == 'returned' ? 'Setujui retur' : (status == 'return_rejected' ? 'Tolak retur' : 'Selesaikan sengketa');
     final note = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
