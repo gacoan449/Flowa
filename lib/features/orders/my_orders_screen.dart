@@ -43,6 +43,7 @@ class _OrdersList extends StatelessWidget {
     'cancelled':'Dibatalkan',
     'return_requested':'Pengajuan retur',
     'returned':'Dikembalikan',
+    'return_rejected':'Retur ditolak',
     'disputed':'Dalam sengketa',
   }[status] ?? status;
 
