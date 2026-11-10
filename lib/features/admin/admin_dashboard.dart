@@ -15,7 +15,8 @@ import 'pages/roles_admin_page.dart';
 import 'pages/system_logs_admin_page.dart';
 
 class AdminDashboard extends StatefulWidget {
-  const AdminDashboard({super.key});
+  const AdminDashboard({super.key, this.staffRole = 'admin'});
+  final String staffRole;
   @override
   State<AdminDashboard> createState() => _AdminDashboardState();
 }
