@@ -450,6 +450,15 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    match /order_cases/{orderId} {
+      allow read: if signedIn()
+        && (resource.data.buyerId == request.auth.uid
+          || resource.data.sellerId == request.auth.uid
+          || hasPermission('orders')
+          || hasPermission('disputes'));
+      allow create, update, delete: if false;
+    }
+
     match /wallets/{userId} {
       allow read: if isOwner(userId) || hasPermission('finance');
       allow create, update, delete: if false;
