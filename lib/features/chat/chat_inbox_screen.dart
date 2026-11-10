@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../../core/app_appearance.dart';
 
 import 'chat_profile_service.dart';
 import 'chat_screen.dart';
@@ -41,7 +42,7 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
         .where('participants', arrayContains: user.uid).snapshots();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FB),
+      backgroundColor: Theme.of(context).extension<FlowaDesignTokens>()?.backgroundFor('chat', Theme.of(context).scaffoldBackgroundColor),
       appBar: AppBar(
         backgroundColor: const Color(0xFFF5F7FB), surfaceTintColor: Colors.transparent,
         elevation: 0, titleSpacing: 22,
