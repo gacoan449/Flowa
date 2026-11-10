@@ -10,6 +10,7 @@ class AuthService {
   Future<void> register({
     required String email,
     required String password,
+    String? displayName,
   }) async {
     final credential = await _auth.createUserWithEmailAndPassword(
       email: email.trim(),
@@ -22,6 +23,7 @@ class AuthService {
     await _db.collection('users').doc(user.uid).set({
       'uid': user.uid,
       'email': user.email ?? email.trim(),
+      'name': (displayName ?? '').trim(),
       'role': 'user',
       'createdAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
