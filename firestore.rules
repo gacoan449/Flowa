@@ -405,6 +405,15 @@ service cloud.firestore {
     }
 
     // ==============================
+    // ADMIN AUDIT LOGS
+    // ==============================
+
+    match /admin_audit_logs/{logId} {
+      allow read, create: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    // ==============================
     // DEFAULT: TOLAK AKSES LAINNYA
     // ==============================
 
