@@ -8,6 +8,7 @@ class OrderService {
     required int quantity,
     required String paymentMethod,
     required String deliveryMethod,
+    String deliveryAddress = '',
     String note = '',
   }) async {
     final result = await _functions.httpsCallable('createMarketplaceOrder').call({
@@ -15,6 +16,7 @@ class OrderService {
       'quantity': quantity,
       'paymentMethod': paymentMethod,
       'deliveryMethod': deliveryMethod,
+      'deliveryAddress': deliveryAddress,
       'note': note,
     });
     return Map<String, dynamic>.from(result.data as Map);
