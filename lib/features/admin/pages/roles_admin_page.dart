@@ -52,8 +52,7 @@ class RolesAdminPage extends StatelessWidget {
                 return Card(child: ListTile(
                   leading: CircleAvatar(child: Text(((data['name'] ?? data['email'] ?? '?').toString().isNotEmpty ? (data['name'] ?? data['email']).toString()[0] : '?').toUpperCase())),
                   title: Text((data['name'] ?? 'Pengguna Flowa').toString()),
-                  subtitle: Text((data['email'] ?? doc.id).toString() + '
-Role saat ini: $current'),
+                  subtitle: Text((data['email'] ?? doc.id).toString() + '\nRole saat ini: $current'),
                   isThreeLine: true,
                   trailing: PopupMenuButton<String>(
                     tooltip: 'Ubah role',
