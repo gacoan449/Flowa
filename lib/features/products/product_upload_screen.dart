@@ -39,11 +39,11 @@ class _ProductUploadScreenState extends State<ProductUploadScreen> {
     try {
       final files = await ImagePicker().pickMultiImage(imageQuality: 85, maxWidth: 1800, maxHeight: 1800);
       if (!mounted || files.isEmpty) return;
+      final remaining = 10 - images.length;
       setState(() {
-        final remaining = 10 - images.length;
         images.addAll(files.take(remaining).map((x) => File(x.path)));
       });
-      if (files.length > 10 - (images.length - files.length)) {
+      if (files.length > remaining) {
         showMessage('Maksimal 10 foto. Foto selebihnya tidak ditambahkan.');
       }
     } catch (e) {
