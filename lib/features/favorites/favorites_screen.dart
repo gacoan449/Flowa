@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../products/product_detail_screen.dart';
 import '../products/seller_store_screen.dart';
+import '../../core/app_appearance.dart';
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
@@ -15,6 +16,7 @@ class FavoritesScreen extends StatelessWidget {
     final collection = FirebaseFirestore.instance.collection('users')
       .doc(user.uid).collection('favorites');
     return Scaffold(
+      backgroundColor: Theme.of(context).extension<FlowaDesignTokens>()?.backgroundFor('favorites', Theme.of(context).scaffoldBackgroundColor),
       appBar: AppBar(title: const Text('Favorit Saya')),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: collection.snapshots(),
