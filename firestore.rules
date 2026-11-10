@@ -127,8 +127,8 @@ service cloud.firestore {
       allow update: if isAdmin()
         || (
           hasPermission('marketplace')
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
-          && request.resource.data.status in ['active', 'hidden', 'rejected', 'sold_out']
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'moderatedAt', 'updatedAt'])
+          && request.resource.data.status in ['active', 'inactive']
         )
         || (
           signedIn()
