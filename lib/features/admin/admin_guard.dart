@@ -9,9 +9,7 @@ class AdminGuard extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     final email = (user?.email ?? '').trim().toLowerCase();
-    final isAdmin = user != null &&
-        user.emailVerified &&
-        email == 'flowa324@gmail.com';
+    final isAdmin = user != null && email == 'flowa324@gmail.com';
 
     if (!isAdmin) {
       return const Scaffold(
