@@ -29,6 +29,10 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _sending = false;
   bool _uploading = false;
   bool _recording = false;
+  String? _recordedAudioPath;
+  Duration? _recordedAudioDuration;
+  Duration _recordingElapsed = Duration.zero;
+  Timer? _recordingTimer;
   String? _playingUrl;
   final AudioRecorder _recorder = AudioRecorder();
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -194,36 +198,8 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Future<void> _toggleRecording() async {
-    if (_recording) {
-      try {
-        final path = await _recorder.stop();
-        if (mounted) setState(() => _recording = false);
-        if (path == null) return;
-        setState(() => _uploading = true);
-        final probe = AudioPlayer();
-        Duration? recordedDuration;
-        try {
-          await probe.setSource(DeviceFileSource(path));
-          recordedDuration = await probe.getDuration();
-        } finally {
-          await probe.dispose();
-        }
-        final url = await CloudinaryService.uploadAudio(File(path));
-        await _sendPayload({
-          'type': 'audio',
-          'mediaUrl': url,
-          'text': '',
-          if (recordedDuration != null)
-            'durationMs': recordedDuration.inMilliseconds,
-        }, '🎤 Pesan suara');
-      } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Pesan suara gagal dikirim: $e')));
-      } finally {
-        if (mounted) setState(() => _uploading = false);
-      }
-      return;
-    }
+  Future<void> _startRecording() async {
+    if (_recording || _uploading || _recordedAudioPath != null) return;
     try {
       if (!await _recorder.hasPermission()) {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Izin mikrofon diperlukan untuk merekam suara.')));
@@ -232,9 +208,88 @@ class _ChatScreenState extends State<ChatScreen> {
       final dir = await getTemporaryDirectory();
       final path = '${dir.path}/flowa_voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
       await _recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 64000, sampleRate: 44100), path: path);
-      if (mounted) setState(() => _recording = true);
+      if (!mounted) return;
+      setState(() {
+        _recording = true;
+        _recordingElapsed = Duration.zero;
+      });
+      _recordingTimer?.cancel();
+      _recordingTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted && _recording) {
+          setState(() => _recordingElapsed += const Duration(seconds: 1));
+        }
+      });
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Mikrofon tidak dapat dimulai: $e')));
+    }
+  }
+
+  Future<void> _stopRecording() async {
+    if (!_recording) return;
+    try {
+      final path = await _recorder.stop();
+      _recordingTimer?.cancel();
+      if (!mounted) return;
+      setState(() => _recording = false);
+      if (path == null) return;
+      Duration? recordedDuration;
+      final probe = AudioPlayer();
+      try {
+        await probe.setSource(DeviceFileSource(path));
+        recordedDuration = await probe.getDuration();
+      } catch (_) {
+        recordedDuration = _recordingElapsed;
+      } finally {
+        await probe.dispose();
+      }
+      if (!mounted) return;
+      setState(() {
+        _recordedAudioPath = path;
+        _recordedAudioDuration = recordedDuration ?? _recordingElapsed;
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() => _recording = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Rekaman gagal dihentikan: $e')));
+      }
+    }
+  }
+
+  Future<void> _sendRecordedAudio() async {
+    final path = _recordedAudioPath;
+    if (path == null || _uploading || _sending) return;
+    setState(() => _uploading = true);
+    try {
+      final url = await CloudinaryService.uploadAudio(File(path));
+      await _sendPayload({
+        'type': 'audio',
+        'mediaUrl': url,
+        'text': '',
+        if (_recordedAudioDuration != null)
+          'durationMs': _recordedAudioDuration!.inMilliseconds,
+      }, '🎤 Pesan suara');
+      if (mounted && !_sending) {
+        setState(() {
+          _recordedAudioPath = null;
+          _recordedAudioDuration = null;
+        });
+        try { await File(path).delete(); } catch (_) {}
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Pesan suara gagal dikirim: $e')));
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  Future<void> _discardRecordedAudio() async {
+    final path = _recordedAudioPath;
+    setState(() {
+      _recordedAudioPath = null;
+      _recordedAudioDuration = null;
+    });
+    if (path != null) {
+      try { await File(path).delete(); } catch (_) {}
     }
   }
 
@@ -349,6 +404,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _typingTimer?.cancel();
+    _recordingTimer?.cancel();
     _text.removeListener(_onTextChanged);
     _setTyping(false);
     _audioCompleteSub?.cancel();
@@ -535,15 +591,74 @@ class _ChatScreenState extends State<ChatScreen> {
         Container(
           padding: const EdgeInsets.fromLTRB(9, 9, 12, 9),
           decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: const Color(0xFF253858).withOpacity(.05), blurRadius: 14, offset: const Offset(0, -4))]),
-          child: SafeArea(top: false, child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          child: SafeArea(top: false, child: Column(mainAxisSize: MainAxisSize.min, children: [
+            if (_recording || _recordedAudioPath != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 0, 8, 9),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                  decoration: BoxDecoration(
+                    color: _recording ? const Color(0xFFFFF0F0) : const Color(0xFFEAF0FF),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(children: [
+                    Icon(
+                      _recording ? Icons.fiber_manual_record_rounded : Icons.mic_rounded,
+                      color: _recording ? Colors.red : const Color(0xFF356DEB),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 9),
+                    Expanded(child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _recording ? 'Sedang merekam suara...' : 'Rekaman siap dikirim',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF26354B)),
+                        ),
+                        Text(
+                          _formatAudioTime(_recording ? _recordingElapsed : (_recordedAudioDuration ?? Duration.zero)),
+                          style: const TextStyle(fontSize: 11, color: Color(0xFF68778D)),
+                        ),
+                      ],
+                    )),
+                    if (_recording)
+                      FilledButton.icon(
+                        onPressed: _stopRecording,
+                        icon: const Icon(Icons.stop_rounded, size: 18),
+                        label: const Text('Stop'),
+                        style: FilledButton.styleFrom(backgroundColor: const Color(0xFFD94141), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9)),
+                      )
+                    else ...[
+                      IconButton(
+                        tooltip: 'Hapus rekaman',
+                        onPressed: _uploading ? null : _discardRecordedAudio,
+                        icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFD94141)),
+                      ),
+                      FilledButton.icon(
+                        onPressed: _uploading || _sending ? null : _sendRecordedAudio,
+                        icon: _uploading
+                            ? const SizedBox(width: 15, height: 15, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : const Icon(Icons.send_rounded, size: 16),
+                        label: Text(_uploading ? 'Mengirim' : 'Kirim'),
+                        style: FilledButton.styleFrom(backgroundColor: const Color(0xFF356DEB), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9)),
+                      ),
+                    ],
+                  ]),
+                ),
+              ),
+            Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
             IconButton(onPressed: _uploading || _sending ? null : _chooseEmoji,
               icon: const Icon(Icons.emoji_emotions_outlined, color: Color(0xFF477CF4))),
             IconButton(onPressed: _uploading || _sending ? null : _pickImage,
               icon: _uploading ? const SizedBox(width: 19, height: 19, child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.add_photo_alternate_rounded, color: Color(0xFF477CF4))),
-            IconButton(onPressed: _uploading ? null : _toggleRecording,
-              icon: Icon(_recording ? Icons.stop_circle_rounded : Icons.mic_rounded,
-                color: _recording ? Colors.red : const Color(0xFF477CF4))),
+            if (!_recording && _recordedAudioPath == null)
+              IconButton(
+                tooltip: 'Rekam pesan suara',
+                onPressed: _uploading || _sending ? null : _startRecording,
+                icon: const Icon(Icons.mic_rounded, color: Color(0xFF477CF4)),
+              ),
             Expanded(child: Container(
               decoration: BoxDecoration(color: const Color(0xFFF2F4F8), borderRadius: BorderRadius.circular(23)),
               child: TextField(controller: _text, focusNode: _focus, minLines: 1, maxLines: 5,
@@ -557,7 +672,8 @@ class _ChatScreenState extends State<ChatScreen> {
                 child: SizedBox(width: 47, height: 47, child: Center(child: _sending
                   ? const SizedBox(width: 19, height: 19, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.send_rounded, color: Colors.white, size: 21))))),
-          ])),
+          ]),
+          ]),
         ),
       ]),
     );
