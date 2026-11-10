@@ -532,9 +532,9 @@ class _ChatScreenState extends State<ChatScreen> {
               child: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF477CF4))),
             const SizedBox(width: 10),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('MEMBAHAS PRODUK', style: TextStyle(fontSize: 9, letterSpacing: .8, fontWeight: FontWeight.w800, color: Color(0xFF8B97A9))),
+              Text(widget.productTitle.isEmpty ? 'PESAN LANGSUNG' : 'MEMBAHAS PRODUK', style: const TextStyle(fontSize: 9, letterSpacing: .8, fontWeight: FontWeight.w800, color: Color(0xFF8B97A9))),
               const SizedBox(height: 3),
-              Text(widget.productTitle.isEmpty ? 'Percakapan dengan penjual' : widget.productTitle, maxLines: 1,
+              Text(widget.productTitle.isEmpty ? 'Percakapan pribadi di Flowa' : widget.productTitle, maxLines: 1,
                 overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF26354B))),
             ])),
             const Icon(Icons.verified_outlined, color: Color(0xFF37A77A), size: 18),
