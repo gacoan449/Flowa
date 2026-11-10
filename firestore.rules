@@ -392,19 +392,19 @@ service cloud.firestore {
       allow read: if signedIn()
         && (
           resource.data.userId == request.auth.uid
-          || isAdmin()
+          || hasPermission('chat')
         );
 
       allow update: if signedIn()
         && (
-          isAdmin()
+          hasPermission('chat')
           || (
             resource.data.userId == request.auth.uid
             && request.resource.data.userId == resource.data.userId
           )
         );
 
-      allow delete: if isAdmin();
+      allow delete: if hasPermission('chat');
 
       match /messages/{messageId} {
         function canUseThread() {
