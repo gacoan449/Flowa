@@ -19,7 +19,7 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     return Scaffold(
-      appBar: AppBar(title: const Text('Profil Saya')),
+      appBar: AppBar(title: const Text('Profil Saya'), actions: [IconButton(icon: const Icon(Icons.settings_outlined), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())))],),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -46,6 +46,11 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(height: 12),
                 Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
                 if (username.isNotEmpty) Text('@$username', style: const TextStyle(color: Color(0xFF477CF4))),
+                TextButton.icon(
+                  onPressed: user == null ? null : () => _editBio(context, user.uid, profile['bio']?.toString() ?? ''),
+                  icon: const Icon(Icons.edit_note, size: 17), label: const Text('Edit bio'),
+                ),
+                if ((profile['bio'] ?? '').toString().isNotEmpty) Text((profile['bio']).toString(), textAlign: TextAlign.center),
                 TextButton.icon(
                   onPressed: user == null ? null : () => _editDisplayName(context, user.uid, name),
                   icon: const Icon(Icons.edit_outlined, size: 17),
@@ -106,6 +111,31 @@ class ProfileScreen extends StatelessWidget {
     } catch (_) {
       if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Foto gagal diunggah. Coba lagi dengan koneksi yang stabil.')));
     }
+  }
+
+  Future<void> _editBio(BuildContext context, String uid, String current) async {
+    final controller = TextEditingController(text: current);
+    final value = await showDialog<String>(context: context, builder: (c) => AlertDialog(
+      title: const Text('Tentang saya'),
+      content: TextField(controller: controller, maxLength: 160, maxLines: 3,
+        decoration: const InputDecoration(hintText: 'Tulis bio singkat...')),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(c), child: const Text('Batal')),
+        FilledButton(onPressed: () => Navigator.pop(c, controller.text.trim()), child: const Text('Simpan')),
+      ],
+    ));
+    if (value == null) { controller.dispose(); return; }
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'bio': value, 'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      await ChatProfileService.syncCurrentUser();
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bio profil berhasil diperbarui.')));
+    } catch (_) {
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bio gagal disimpan. Coba lagi.')));
+    } finally { controller.dispose(); }
   }
 
   Future<void> _editDisplayName(BuildContext context, String uid, String currentName) async {
