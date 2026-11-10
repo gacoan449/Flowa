@@ -201,7 +201,7 @@ class _HomeAdminPageState extends State<HomeAdminPage> {
           child: Row(children: [const Icon(Icons.search, size: 17), const SizedBox(width: 7), Expanded(child: Text(_searchHint.text, style: const TextStyle(fontSize: 10, color: Colors.black54)))]));
         break;
       case 'banner':
-        child = Container(height: _bannerHeight.clamp(60, 120), alignment: Alignment.center, decoration: BoxDecoration(
+        child = Container(height: _bannerHeight.clamp(60.0, 120.0).toDouble(), alignment: Alignment.center, decoration: BoxDecoration(
           gradient: LinearGradient(colors: [Color(_accent).withOpacity(.35), Color(_primary).withOpacity(.18)]), borderRadius: BorderRadius.circular(9)),
           child: Text(_bannerTitle.text.isEmpty ? 'Banner promosi' : _bannerTitle.text, textAlign: TextAlign.center, style: TextStyle(color: color, fontWeight: FontWeight.bold)));
         break;
@@ -271,7 +271,7 @@ class _HomeAdminPageState extends State<HomeAdminPage> {
       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
         Text(label), Text('${value.round()} $unit', style: const TextStyle(fontWeight: FontWeight.bold)),
       ]),
-      Slider(value: value.clamp(min, max), min: min, max: max, divisions: divisions, onChanged: change),
+      Slider(value: value.clamp(min, max).toDouble(), min: min, max: max, divisions: divisions, onChanged: change),
     ],
   );
 
