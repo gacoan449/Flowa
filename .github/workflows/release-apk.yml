@@ -24,7 +24,7 @@ jobs:
           from pathlib import Path
           p = Path('android/app/src/main/AndroidManifest.xml')
           s = p.read_text()
-          for permission in ['android.permission.RECORD_AUDIO', 'android.permission.POST_NOTIFICATIONS']:
+          for permission in ['android.permission.RECORD_AUDIO', 'android.permission.POST_NOTIFICATIONS', 'android.permission.ACCESS_COARSE_LOCATION', 'android.permission.ACCESS_FINE_LOCATION']:
               tag = '    <uses-permission android:name="' + permission + '" />' + '\n'
               if permission not in s:
                   s = s.replace('<application', tag + '    <application', 1)
