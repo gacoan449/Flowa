@@ -8,6 +8,7 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  final name = TextEditingController();
   final email = TextEditingController();
   final password = TextEditingController();
   final confirm = TextEditingController();
@@ -24,7 +25,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
     setState(() => loading = true);
     try {
-      await AuthService().register(email: email.text, password: password.text);
+      if (name.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nama pengguna wajib diisi.')));
+        return;
+      }
+      await AuthService().register(email: email.text, password: password.text, displayName: name.text.trim());
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Registrasi gagal: $e')));
@@ -34,7 +39,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   @override
-  void dispose() { email.dispose(); password.dispose(); confirm.dispose(); super.dispose(); }
+  void dispose() { name.dispose(); email.dispose(); password.dispose(); confirm.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -42,6 +47,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     body: Padding(
       padding: const EdgeInsets.all(24),
       child: Column(children: [
+        TextField(controller: name, textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(labelText: 'Nama pengguna / nama tampilan')),
+        const SizedBox(height: 12),
         TextField(controller: email, keyboardType: TextInputType.emailAddress,
           decoration: const InputDecoration(labelText: 'Email')),
         const SizedBox(height: 12),
