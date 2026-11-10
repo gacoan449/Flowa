@@ -11,6 +11,7 @@ import '../chat/support_chat_screen.dart';
 import '../chat/chat_profile_service.dart';
 import '../favorites/favorites_screen.dart';
 import '../products/my_listings_screen.dart';
+import '../orders/my_orders_screen.dart';
 import 'settings_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -62,6 +63,8 @@ class ProfileScreen extends StatelessWidget {
             },
           ),
           const SizedBox(height: 24),
+          _menu(context, Icons.receipt_long_outlined, 'Pesanan Saya',
+              'Pantau pembelian dan pesanan dari pelanggan', const MyOrdersScreen()),
           _menu(context, Icons.inventory_2_outlined, 'Iklan Saya',
               'Lihat dan kelola produk yang kamu pasang',
               const MyListingsScreen()),
