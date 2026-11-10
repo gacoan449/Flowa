@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../products/product_upload_screen.dart';
 import '../marketplace/marketplace_screen.dart';
+import '../marketplace/marketplace_search_screen.dart';
 import '../chat/chat_inbox_screen.dart';
 import '../profile/profile_screen.dart';
 import 'home_config_service.dart';
@@ -80,7 +81,7 @@ class _HomeScreenState extends State<HomeScreen>{
               Text((config['title']??'Flowa').toString(),style:const TextStyle(color:Colors.white,fontSize:23,fontWeight:FontWeight.bold)),
               Text((config['subtitle']??'').toString(),style:const TextStyle(color:Colors.white70)),
               const SizedBox(height:14),
-              TextField(readOnly:true,decoration:InputDecoration(prefixIcon:const Icon(Icons.search),hintText:'Cari barang di sekitar Anda...',filled:true,fillColor:Colors.white,border:OutlineInputBorder(borderRadius:BorderRadius.circular(14),borderSide:BorderSide.none))),
+              TextField(readOnly:true,onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const MarketplaceSearchScreen())),decoration:InputDecoration(prefixIcon:const Icon(Icons.search),hintText:'Cari barang di sekitar Anda...',filled:true,fillColor:Colors.white,border:OutlineInputBorder(borderRadius:BorderRadius.circular(14),borderSide:BorderSide.none))),
             ])),
             for(final key in order)if(sections[key]!=null)sections[key]!,
           ]))),
