@@ -1,6 +1,25 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+class FlowaDesignTokens extends ThemeExtension<FlowaDesignTokens> {
+  const FlowaDesignTokens({required this.screenBackgrounds, required this.navigation});
+  final Map<String, Color> screenBackgrounds;
+  final Map<String, String> navigation;
+
+  Color backgroundFor(String screen, Color fallback) => screenBackgrounds[screen] ?? fallback;
+
+  @override
+  FlowaDesignTokens copyWith({Map<String, Color>? screenBackgrounds, Map<String, String>? navigation}) =>
+      FlowaDesignTokens(screenBackgrounds: screenBackgrounds ?? this.screenBackgrounds,
+        navigation: navigation ?? this.navigation);
+
+  @override
+  FlowaDesignTokens lerp(ThemeExtension<FlowaDesignTokens>? other, double t) {
+    if (other is! FlowaDesignTokens) return this;
+    return t < .5 ? this : other;
+  }
+}
+
 class AppAppearance {
   static const defaults = <String, dynamic>{
     'primaryColor': 0xFF0866FF,
