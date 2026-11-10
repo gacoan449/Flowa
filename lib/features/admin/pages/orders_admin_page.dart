@@ -16,6 +16,7 @@ class OrdersAdminPage extends StatelessWidget {
     'cancelled':'Dibatalkan',
     'return_requested':'Pengajuan retur',
     'returned':'Dikembalikan',
+    'return_rejected':'Retur ditolak',
     'disputed':'Sengketa',
   }[status] ?? status;
 
@@ -122,7 +123,10 @@ class OrdersAdminPage extends StatelessWidget {
                     if (status == 'confirmed') OutlinedButton(onPressed: () => _change(context, doc.id, 'processing'), child: const Text('Proses')),
                     if (status == 'processing') OutlinedButton(onPressed: () => _change(context, doc.id, 'shipped'), child: const Text('Kirim')),
                     if (status == 'shipped') OutlinedButton(onPressed: () => _change(context, doc.id, 'completed'), child: const Text('Selesaikan')),
-                    if (status == 'return_requested') OutlinedButton(onPressed: () => _resolveCase(context, doc.id, 'returned'), child: const Text('Setujui retur')),
+                    if (status == 'return_requested') ...[
+                      OutlinedButton(onPressed: () => _resolveCase(context, doc.id, 'returned'), child: const Text('Setujui retur')),
+                      TextButton(onPressed: () => _resolveCase(context, doc.id, 'return_rejected'), child: const Text('Tolak retur')),
+                    ],
                     if (status == 'disputed') ...[
                       OutlinedButton(onPressed: () => _resolveCase(context, doc.id, 'returned'), child: const Text('Putuskan retur/refund')),
                       OutlinedButton(onPressed: () => _resolveCase(context, doc.id, 'completed'), child: const Text('Tolak / selesaikan')),
