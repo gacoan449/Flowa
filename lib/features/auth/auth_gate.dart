@@ -58,11 +58,9 @@ class _UserProfileGateState extends State<_UserProfileGate> with WidgetsBindingO
     final currentUser = FirebaseAuth.instance.currentUser ?? widget.user;
     final adminEmail = (currentUser.email ?? '').trim().toLowerCase();
 
-    // Jangan diam-diam mengarahkan email admin yang belum verified ke Home user.
+    // Kembali ke model akses admin semula: email admin khusus langsung
+    // diarahkan ke dashboard, tanpa syarat emailVerified.
     if (adminEmail == 'flowa324@gmail.com') {
-      if (!currentUser.emailVerified) return 'admin_unverified';
-      // Perbarui token agar Firestore Rules menerima klaim email_verified terbaru.
-      await currentUser.getIdToken(true);
       try {
         await ChatProfileService.syncCurrentUser(displayName: currentUser.displayName);
       } catch (_) {
@@ -143,12 +141,6 @@ class _UserProfileGateState extends State<_UserProfileGate> with WidgetsBindingO
         switch (snapshot.data) {
           case 'admin':
             return const AdminDashboard();
-          case 'admin_unverified':
-            return _AuthMessage(
-              title: 'Email admin belum terverifikasi',
-              message: 'Akun flowa324@gmail.com terdeteksi, tetapi Firebase belum menandai email sebagai terverifikasi. Verifikasi email di Firebase Authentication, lalu tekan Coba lagi.',
-              onRetry: _retry,
-            );
           case 'suspended':
             return _AuthMessage(
               title: 'Akun dinonaktifkan',
