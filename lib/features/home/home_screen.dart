@@ -37,9 +37,9 @@ class _HomeScreenState extends State<HomeScreen> {
       final now = DateTime.now();
       final promoWindow = (start == null || !now.isBefore(start)) &&
           (end == null || !now.isAfter(DateTime(end.year, end.month, end.day, 23, 59, 59)));
-      final bannerHeight = ((config['bannerHeight'] as num?)?.toDouble() ?? 132).clamp(80.0, 220.0);
-      final columns = ((config['productColumns'] as num?)?.toInt() ?? 2).clamp(1, 3);
-      final spacing = ((config['productSpacing'] as num?)?.toDouble() ?? 10).clamp(2.0, 24.0);
+      final bannerHeight = ((config['bannerHeight'] as num?)?.toDouble() ?? 132).clamp(80.0, 220.0).toDouble();
+      final columns = ((config['productColumns'] as num?)?.toInt() ?? 2).clamp(1, 3).toInt();
+      final spacing = ((config['productSpacing'] as num?)?.toDouble() ?? 10).clamp(2.0, 24.0).toDouble();
 
       final sections = <String, Widget>{
         if (config['showHeader'] != false && visibility['header'] != false)
