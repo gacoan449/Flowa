@@ -99,6 +99,20 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Set Flowa app name and generate launcher icon
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('android/app/src/main/AndroidManifest.xml')
+          s = p.read_text()
+          s = s.replace('android:label="pasar_komunitas"', 'android:label="Flowa"')
+          s = s.replace('android:label="com.example.pasar_komunitas"', 'android:label="Flowa"')
+          import re
+          s = re.sub(r'android:label="[^"]*"', 'android:label="Flowa"', s, count=1)
+          p.write_text(s)
+          PY
+          dart run flutter_launcher_icons
+
       - name: Analyze project
         run: flutter analyze lib --no-fatal-infos
 
