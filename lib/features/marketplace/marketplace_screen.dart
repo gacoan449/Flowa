@@ -72,26 +72,35 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   @override
   Widget build(BuildContext context) => Column(
         children: [
-          if (_locationLoading || _locationError != null)
-            Material(
+          Material(
               color: const Color(0xFFEAF3FF),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 child: Row(
                   children: [
-                    Icon(_locationLoading ? Icons.gps_not_fixed : Icons.location_off,
-                        color: const Color(0xFF1769E8), size: 19),
+                    Icon(
+                      _locationLoading
+                          ? Icons.gps_not_fixed
+                          : (_locationError == null ? Icons.my_location : Icons.location_off),
+                      color: const Color(0xFF1769E8),
+                      size: 19,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         _locationLoading
-                            ? 'Mencari lokasi kamu untuk menghitung jarak...'
-                            : 'Jarak belum tersedia. ${_locationError ?? 'Aktifkan GPS dan izinkan lokasi.'}',
+                            ? 'Mencari lokasi GPS kamu...'
+                            : (_locationError == null
+                                ? 'Jarak dihitung dari lokasi GPS kamu.'
+                                : 'Jarak belum tersedia. ${_locationError ?? 'Aktifkan GPS dan izinkan lokasi.'}'),
                         style: const TextStyle(fontSize: 12),
                       ),
                     ),
-                    if (!_locationLoading)
-                      TextButton(onPressed: _refreshBuyerLocation, child: const Text('Coba lagi')),
+                    IconButton(
+                      tooltip: 'Perbarui lokasi GPS',
+                      onPressed: _locationLoading ? null : _refreshBuyerLocation,
+                      icon: const Icon(Icons.refresh, size: 20),
+                    ),
                   ],
                 ),
               ),
