@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'edit_listing_screen.dart';
 import 'product_service.dart';
+import '../../core/app_appearance.dart';
 
 class MyListingsScreen extends StatelessWidget {
   const MyListingsScreen({super.key});
@@ -15,6 +16,7 @@ class MyListingsScreen extends StatelessWidget {
       return const Scaffold(body: Center(child: Text('Silakan login kembali.')));
     }
     return Scaffold(
+      backgroundColor: Theme.of(context).extension<FlowaDesignTokens>()?.backgroundFor('marketplace', Theme.of(context).scaffoldBackgroundColor),
       appBar: AppBar(title: const Text('Iklan Saya')),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: FirebaseFirestore.instance
