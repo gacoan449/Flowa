@@ -24,16 +24,29 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, configSnapshot) {
         final config = <String, dynamic>{...HomeConfigService.defaults}
           ..addAll(configSnapshot.data?.data() ?? {});
+        final primaryColor = Color((config['primaryColor'] as num?)?.toInt() ?? 0xFF0758D9);
+        final accentColor = Color((config['accentColor'] as num?)?.toInt() ?? 0xFF00A8FF);
+        final backgroundColor = Color((config['backgroundColor'] as num?)?.toInt() ?? 0xFFF7F9FC);
+        final bannerHeight = ((config['bannerHeight'] as num?)?.toDouble() ?? 132).clamp(80.0, 220.0);
+        final visibility = config['sectionVisibility'] is Map
+            ? Map<String, dynamic>.from(config['sectionVisibility'] as Map)
+            : <String, dynamic>{};
+        final now = DateTime.now();
+        final start = config['promoStartAt'] is Timestamp ? (config['promoStartAt'] as Timestamp).toDate() : null;
+        final end = config['promoEndAt'] is Timestamp ? (config['promoEndAt'] as Timestamp).toDate() : null;
+        final promoInWindow = (start == null || !now.isBefore(start)) &&
+            (end == null || !now.isAfter(end.add(const Duration(days: 1))));
         return Scaffold(
+          backgroundColor: backgroundColor,
           body: SafeArea(
             child: Column(
               children: [
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Color(0xFF0758D9), Color(0xFF00A8FF)],
+                      colors: [primaryColor, accentColor],
                     ),
                     borderRadius: BorderRadius.vertical(
                       bottom: Radius.circular(24),
@@ -71,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
-                if (config['showBanner'] == true)
+                if (config['showBanner'] == true && visibility['banner'] != false && promoInWindow)
                   StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                     stream: FirebaseFirestore.instance
                         .collection('banners')
@@ -105,7 +118,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         );
                       }
                       return SizedBox(
-                        height: 116,
+                        height: bannerHeight,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           padding: const EdgeInsets.symmetric(
@@ -179,7 +192,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       .where('active', isEqualTo: true).snapshots(),
                   builder: (context, announcementSnapshot) {
                     final announcements = announcementSnapshot.data?.docs ?? [];
-                    if (announcements.isEmpty) return const SizedBox.shrink();
+                    if (announcements.isEmpty || visibility['announcement'] == false) return const SizedBox.shrink();
                     final announcement = announcements.first.data();
                     return Container(
                       width: double.infinity,
@@ -209,7 +222,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   },
                 ),
-                if (config['showCategories'] == true)
+                if (config['showCategories'] == true && visibility['categories'] != false)
                   StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                     stream: FirebaseFirestore.instance.collection('categories')
                         .where('active', isEqualTo: true).snapshots(),
@@ -245,7 +258,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   ),
                 Expanded(
-                  child: MarketplaceScreen(selectedCategory: selectedCategory),
+                  child: visibility['products'] == false
+                      ? const Center(child: Text('Produk sedang disembunyikan admin.'))
+                      : MarketplaceScreen(
+                          selectedCategory: selectedCategory,
+                          productColumns: (config['productColumns'] as num?)?.toInt() ?? 2,
+                          productSpacing: (config['productSpacing'] as num?)?.toDouble() ?? 10,
+                        ),
                 ),
               ],
             ),
