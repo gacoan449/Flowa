@@ -76,7 +76,6 @@ class ProductDetailScreen extends StatelessWidget {
             decoration: const InputDecoration(labelText: 'Metode pembayaran'),
             items: const [
               DropdownMenuItem(value: 'cod', child: Text('COD / Bayar saat serah terima')),
-              DropdownMenuItem(value: 'wallet', child: Text('Saldo Flowa')),
             ],
             onChanged: (v) => setDialogState(() => payment = v ?? 'cod'),
           ),
