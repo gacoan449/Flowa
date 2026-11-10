@@ -1,4 +1,4 @@
-const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
 const { logger } = require("firebase-functions");
 const admin = require("firebase-admin");
 
@@ -310,4 +310,44 @@ exports.logClientFailure = onCall(async (request) => {
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
   });
   return { success: true };
+});
+
+
+const ORDER_STATUS_TEXT = {
+  awaiting_confirmation: "Pesanan baru menunggu konfirmasi penjual",
+  paid: "Pembayaran saldo berhasil",
+  confirmed: "Pesanan telah dikonfirmasi",
+  processing: "Pesanan sedang diproses",
+  shipped: "Pesanan telah dikirim",
+  completed: "Pesanan selesai",
+  cancelled: "Pesanan dibatalkan",
+  return_requested: "Pembeli mengajukan pengembalian",
+  returned: "Pengembalian pesanan diproses",
+  disputed: "Pesanan masuk pusat sengketa",
+};
+
+exports.notifyMarketplaceOrderCreated = onDocumentCreated("orders/{orderId}", async (event) => {
+  const order = event.data?.data();
+  if (!order) return;
+  const title = "Pesanan Flowa";
+  const body = ORDER_STATUS_TEXT[order.status] || "Pesanan baru dibuat";
+  await Promise.all([
+    sendToUser(order.sellerId, title, body, { type: "marketplace_order", orderId: event.params.orderId }),
+    sendToUser(order.buyerId, title, "Pesanan berhasil dibuat", { type: "marketplace_order", orderId: event.params.orderId }),
+  ]);
+  logger.info("Marketplace order notification dispatched", { orderId: event.params.orderId });
+});
+
+exports.notifyMarketplaceOrderStatus = onDocumentUpdated("orders/{orderId}", async (event) => {
+  const before = event.data?.before.data();
+  const after = event.data?.after.data();
+  if (!before || !after || before.status === after.status) return;
+  const body = ORDER_STATUS_TEXT[after.status] || "Status pesanan diperbarui";
+  const recipients = [...new Set([after.buyerId, after.sellerId].filter(Boolean))];
+  await Promise.all(recipients.map((uid) =>
+    sendToUser(uid, "Pembaruan Pesanan Flowa", body, {
+      type: "marketplace_order_status", orderId: event.params.orderId, status: after.status,
+    })
+  ));
+  logger.info("Marketplace order status notification dispatched", { orderId: event.params.orderId, status: after.status });
 });
