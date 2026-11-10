@@ -37,7 +37,7 @@ class _PlatformControlAdminPageState extends State<PlatformControlAdminPage>
       {'k':'paidPromotionEnabled','l':'Promosi berbayar diizinkan','t':'b','d':false},
       {'k':'stockValidationEnabled','l':'Validasi stok diwajibkan','t':'b','d':true},
       {'k':'codEnabled','l':'Pembayaran COD diizinkan','t':'b','d':true},
-      {'k':'walletEnabled','l':'Saldo Flowa diizinkan','t':'b','d':true},
+      {'k':'walletEnabled','l':'Saldo Flowa diizinkan','t':'b','d':false},
       {'k':'maxActiveListings','l':'Maksimum iklan aktif per penjual','t':'n','d':'50'},
       {'k':'promotionDisclaimer','l':'Catatan aturan promosi','t':'s','d':''},
     ],
