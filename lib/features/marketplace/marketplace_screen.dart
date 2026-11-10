@@ -7,9 +7,16 @@ import '../../core/services/location_service.dart';
 import '../products/product_detail_screen.dart';
 
 class MarketplaceScreen extends StatefulWidget {
-  const MarketplaceScreen({super.key, this.selectedCategory});
+  const MarketplaceScreen({
+    super.key,
+    this.selectedCategory,
+    this.productColumns = 2,
+    this.productSpacing = 10,
+  });
 
   final String? selectedCategory;
+  final int productColumns;
+  final double productSpacing;
 
   @override
   State<MarketplaceScreen> createState() => _MarketplaceScreenState();
@@ -132,8 +139,16 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                   ));
                 }
                 final buyerId = FirebaseAuth.instance.currentUser?.uid;
-                return ListView.builder(
-                  padding: const EdgeInsets.all(12),
+                return GridView.builder(
+                  padding: EdgeInsets.all(widget.productSpacing),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: widget.productColumns.clamp(1, 3),
+                    crossAxisSpacing: widget.productSpacing,
+                    mainAxisSpacing: widget.productSpacing,
+                    childAspectRatio: widget.productColumns <= 1
+                        ? 3.2
+                        : (widget.productColumns == 2 ? 1.05 : 0.78),
+                  ),
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final doc = docs[index];
