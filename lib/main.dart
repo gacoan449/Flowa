@@ -9,6 +9,7 @@ import 'firebase_options.dart';
 import 'features/auth/auth_gate.dart';
 import 'features/chat/chat_profile_service.dart';
 import 'core/app_theme.dart';
+import 'core/brand_splash_screen.dart';
 import 'core/notification_service.dart';
 
 Future<void> main() async {
@@ -64,7 +65,7 @@ class _FlowaAppState extends State<FlowaApp> with WidgetsBindingObserver {
       debugShowCheckedModeBanner: false,
       title: 'Flowa',
       theme: AppTheme.light(),
-      home: const AuthGate(),
+      home: const FlowaBrandSplash(),
     );
   }
 }
