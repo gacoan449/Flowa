@@ -90,11 +90,7 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
               final bd = bt is Timestamp ? bt.toDate() : DateTime(2000);
               return bd.compareTo(ad);
             });
-            final filtered = docs.where((doc) {
-              final d = doc.data();
-              return (d['productTitle'] ?? '').toString().toLowerCase().contains(_query) ||
-                (d['lastMessage'] ?? '').toString().toLowerCase().contains(_query);
-            }).toList();
+            final filtered = docs;
             if (docs.isEmpty) return _state(Icons.forum_rounded, 'Belum ada percakapan', 'Temukan produk menarik, lalu hubungi penjual dari halaman produk.');
             if (filtered.isEmpty) return _state(Icons.search_off_rounded, 'Tidak ada hasil', 'Coba kata kunci lain.');
 
@@ -105,7 +101,8 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
                 final doc = filtered[index]; final data = doc.data();
                 final participants = List<String>.from(data['participants'] ?? const []);
                 final otherId = participants.firstWhere((id) => id != user.uid, orElse: () => '');
-                final productTitle = (data['productTitle'] ?? 'Percakapan Flowa').toString();
+                final rawProductTitle = (data['productTitle'] ?? '').toString().trim();
+                final productTitle = rawProductTitle.isEmpty ? 'Pesan langsung' : rawProductTitle;
                 final preview = (data['lastMessage'] ?? 'Mulai percakapan').toString();
                 final time = _timeLabel(data['lastMessageAt']);
                 return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
