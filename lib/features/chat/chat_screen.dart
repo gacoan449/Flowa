@@ -118,7 +118,6 @@ class _ChatScreenState extends State<ChatScreen> {
         'lastMessage': preview,
         'lastMessageAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
-        'typing.$_uid': false,
       }, SetOptions(merge: true));
       batch.set(_chat.collection('messages').doc(), {
         ...payload,
