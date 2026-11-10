@@ -234,7 +234,7 @@ exports.updateMarketplaceOrderStatus = onCall(async (request) => {
       settings.allowBuyerCancellation !== false &&
       ["awaiting_confirmation", "paid", "confirmed"].includes(current);
     const sellerAction = isSeller && (
-      (status === "confirmed" && current === "awaiting_confirmation") ||
+      (status === "confirmed" && ["awaiting_confirmation", "paid"].includes(current)) ||
       (status === "processing" && current === "confirmed") ||
       (status === "shipped" && current === "processing") ||
       (status === "completed" && current === "shipped")
@@ -253,20 +253,35 @@ exports.updateMarketplaceOrderStatus = onCall(async (request) => {
     if (status === "cancelled" && ["shipped", "completed", "returned"].includes(current)) {
       throw new HttpsError("failed-precondition", "Pesanan yang sudah dikirim tidak dapat dibatalkan dengan alur ini.");
     }
-    if (status === "cancelled" && order.stockRestored !== true) {
-      const productRef = db.collection("products").doc(order.productId);
-      const productSnap = await tx.get(productRef);
-      if (productSnap.exists) {
-        const data = productSnap.data();
-        tx.update(productRef, { stock: Number(data.stock || 0) + Number(order.quantity || 1), status: "active", updatedAt: admin.firestore.FieldValue.serverTimestamp() });
-      }
+    let productSnap = null;
+    let walletSnap = null;
+    const restoreStock = status === "cancelled" && order.stockRestored !== true;
+    const refundWallet = status === "cancelled" && order.paymentMethod === "wallet" && order.paymentStatus === "paid" && order.refundProcessed !== true;
+    const productRef = db.collection("products").doc(order.productId);
+    const walletRef = db.collection("wallets").doc(order.buyerId);
+    if (restoreStock) productSnap = await tx.get(productRef);
+    if (refundWallet) walletSnap = await tx.get(walletRef);
+
+    if (restoreStock && productSnap && productSnap.exists) {
+      const data = productSnap.data();
+      tx.update(productRef, { stock: Number(data.stock || 0) + Number(order.quantity || 1), status: "active", updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+    }
+    if (refundWallet) {
+      const balance = Number(walletSnap?.data()?.balance || 0);
+      tx.set(walletRef, { balance: balance + Number(order.total || 0), updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      const refundRef = db.collection("wallet_transactions").doc();
+      tx.set(refundRef, {
+        uid: order.buyerId, type: "purchase_refund", amount: Number(order.total || 0),
+        orderId, createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
     }
     const history = Array.isArray(order.statusHistory) ? order.statusHistory : [];
     tx.update(ref, {
       status, statusReason: typeof reason === "string" ? reason.slice(0, 500) : "",
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       statusHistory: [...history, { status, by: auth.uid, at: new Date().toISOString() }],
-      ...(status === "cancelled" && !order.stockRestored ? { stockRestored: true } : {}),
+      ...(restoreStock ? { stockRestored: true } : {}),
+      ...(refundWallet ? { refundProcessed: true, paymentStatus: "refunded" } : {}),
     });
     return { orderId, previousStatus: current, status };
   });
