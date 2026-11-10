@@ -31,11 +31,23 @@ class ProductService {
     required double longitude,
     String category = 'Lainnya',
     String locationName = '',
+    String brand = '',
+    String condition = 'Baru',
+    int stock = 1,
+    bool isNegotiable = false,
+    List<String> deliveryOptions = const ['delivery', 'meetup'],
+    String warranty = '',
   }) async {
     final user = _auth.currentUser;
     if (user == null) throw StateError('Sesi login berakhir. Silakan login kembali.');
     if (title.trim().isEmpty) throw ArgumentError('Judul produk wajib diisi.');
-    if (price < 0) throw ArgumentError('Harga tidak boleh negatif.');
+    if (price <= 0) throw ArgumentError('Harga harus lebih dari nol.');
+    if (stock < 1) throw ArgumentError('Stok minimal satu.');
+    if (images.isEmpty) throw ArgumentError('Minimal satu foto produk diperlukan.');
+    if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180 ||
+        (latitude == 0 && longitude == 0)) {
+      throw ArgumentError('Koordinat lokasi tidak valid.');
+    }
 
     final ref = _db.collection('products').doc();
     final userDoc = await _db.collection('users').doc(user.uid).get();
@@ -49,12 +61,18 @@ class ProductService {
       'title': title.trim(),
       'description': description.trim(),
       'price': price,
-      'imageUrl': urls.isEmpty ? '' : urls.first,
+      'imageUrl': urls.first,
       'imageUrls': urls,
       'latitude': double.parse(latitude.toStringAsFixed(3)),
       'longitude': double.parse(longitude.toStringAsFixed(3)),
       'locationName': locationName,
       'category': category,
+      'brand': brand,
+      'condition': condition,
+      'stock': stock,
+      'isNegotiable': isNegotiable,
+      'deliveryOptions': deliveryOptions,
+      'warranty': warranty,
       'status': 'active',
       'reportCount': 0,
       'createdAt': FieldValue.serverTimestamp(),
