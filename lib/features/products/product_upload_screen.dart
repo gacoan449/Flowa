@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../core/services/location_service.dart';
 import 'product_service.dart';
 
 class ProductUploadScreen extends StatefulWidget {
@@ -18,6 +19,7 @@ class _ProductUploadScreenState extends State<ProductUploadScreen> {
   final price = TextEditingController();
   final images = <File>[];
   bool loading = false;
+  String locationStatus = 'GPS penjual akan diambil saat iklan diterbitkan.';
 
   Future<void> pick() async {
     try {
@@ -25,41 +27,36 @@ class _ProductUploadScreenState extends State<ProductUploadScreen> {
       if (!mounted) return;
       setState(() => images.addAll(files.map((x) => File(x.path))));
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal memilih foto: $e')),
-        );
-      }
+      if (mounted) _show('Gagal memilih foto: $e');
     }
   }
 
   Future<void> save() async {
     final parsedPrice = int.tryParse(price.text.trim());
-    if (title.text.trim().isEmpty) {
-      _show('Judul produk wajib diisi.');
-      return;
-    }
-    if (parsedPrice == null || parsedPrice < 0) {
-      _show('Masukkan harga berupa angka yang valid.');
-      return;
-    }
-    if (images.isEmpty) {
-      _show('Pilih minimal satu foto produk.');
-      return;
-    }
-    setState(() => loading = true);
+    if (title.text.trim().isEmpty) return _show('Judul produk wajib diisi.');
+    if (parsedPrice == null || parsedPrice < 0) return _show('Masukkan harga yang valid.');
+    if (images.isEmpty) return _show('Pilih minimal satu foto produk.');
+
+    setState(() {
+      loading = true;
+      locationStatus = 'Mengambil lokasi GPS penjual...';
+    });
     try {
+      // Koordinat diambil sekali ketika iklan dibuat; proses edit tidak mengubahnya.
+      final position = await LocationService().current();
+      if (!mounted) return;
+      setState(() => locationStatus = 'GPS ditemukan. Lokasi awal iklan akan disimpan.');
       await ProductService().createProduct(
         title: title.text,
         description: description.text,
         price: parsedPrice,
         images: images,
-        latitude: 0,
-        longitude: 0,
+        latitude: position.latitude,
+        longitude: position.longitude,
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Iklan berhasil diterbitkan. Buka Iklan Saya untuk melihatnya.')),
+        const SnackBar(content: Text('Iklan berhasil diterbitkan dengan lokasi GPS.')),
       );
       Navigator.pop(context, true);
     } catch (e) {
@@ -70,11 +67,7 @@ class _ProductUploadScreenState extends State<ProductUploadScreen> {
   }
 
   void _show(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
-    }
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -101,18 +94,13 @@ class _ProductUploadScreenState extends State<ProductUploadScreen> {
                 height: 100,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
-                  children: images
-                      .map((file) => Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Image.file(file, width: 100, fit: BoxFit.cover),
-                          ))
-                      .toList(),
+                  children: images.map((file) => Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Image.file(file, width: 100, fit: BoxFit.cover),
+                  )).toList(),
                 ),
               ),
-            TextField(
-              controller: title,
-              decoration: const InputDecoration(labelText: 'Judul produk *'),
-            ),
+            TextField(controller: title, decoration: const InputDecoration(labelText: 'Judul produk *')),
             TextField(
               controller: price,
               keyboardType: TextInputType.number,
@@ -123,10 +111,31 @@ class _ProductUploadScreenState extends State<ProductUploadScreen> {
               maxLines: 4,
               decoration: const InputDecoration(labelText: 'Deskripsi'),
             ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAF3FF),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.location_on, color: Color(0xFF1769E8)),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Text(
+                      '$locationStatus Koordinat disimpan sebagai lokasi perkiraan untuk menjaga privasi alamat penjual.',
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: loading ? null : save,
-              child: Text(loading ? 'Mengunggah...' : 'Terbitkan'),
+              child: Text(loading ? 'Mengambil GPS & mengunggah...' : 'Terbitkan'),
             ),
           ],
         ),
