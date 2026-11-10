@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../../core/app_appearance.dart';
 import '../products/product_detail_screen.dart';
 
 class MarketplaceSearchScreen extends StatefulWidget {
@@ -14,6 +15,7 @@ class _MarketplaceSearchScreenState extends State<MarketplaceSearchScreen> {
   void dispose() { _controller.dispose(); super.dispose(); }
   @override
   Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Theme.of(context).extension<FlowaDesignTokens>()?.backgroundFor('marketplace', Theme.of(context).scaffoldBackgroundColor),
     appBar: AppBar(title: const Text('Cari di Flowa')),
     body: Column(children: [
       Padding(padding: const EdgeInsets.fromLTRB(16, 8, 16, 12), child: TextField(
