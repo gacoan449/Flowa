@@ -69,6 +69,17 @@ class _UserProfileGateState extends State<_UserProfileGate> with WidgetsBindingO
       return 'admin';
     }
 
+    // Staff roles are issued only by the trusted setStaffRole Cloud Function.
+    // Force-refresh the signed custom claims before selecting an admin workspace.
+    final tokenResult = await currentUser.getIdTokenResult(true).timeout(const Duration(seconds: 15));
+    final claimRole = (tokenResult.claims?['role'] ?? '').toString().toLowerCase();
+    if (['admin', 'moderator', 'support'].contains(claimRole)) {
+      try {
+        await ChatProfileService.syncCurrentUser(displayName: currentUser.displayName);
+      } catch (_) {}
+      return claimRole;
+    }
+
     final ref = FirebaseFirestore.instance.collection('users').doc(widget.user.uid);
     final snapshot = await ref.get().timeout(const Duration(seconds: 15));
     try {
