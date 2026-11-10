@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'chat_profile_service.dart';
 import 'chat_screen.dart';
+import 'discover_users_screen.dart';
 
 class ChatInboxScreen extends StatefulWidget {
   const ChatInboxScreen({super.key});
@@ -45,9 +46,12 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
         backgroundColor: const Color(0xFFF5F7FB), surfaceTintColor: Colors.transparent,
         elevation: 0, titleSpacing: 22,
         title: const Text('Pesan', style: TextStyle(fontSize: 27, fontWeight: FontWeight.w800, letterSpacing: -0.7)),
-        actions: const [Padding(padding: EdgeInsets.only(right: 18), child: CircleAvatar(
-          radius: 19, backgroundColor: Color(0xFFE7EEFF),
-          child: Icon(Icons.forum_rounded, color: Color(0xFF3267E9), size: 19)))],
+        actions: [
+          IconButton(tooltip: 'Temukan pengguna', onPressed: () => Navigator.push(context,
+            MaterialPageRoute(builder: (_) => const DiscoverUsersScreen())),
+            icon: const Icon(Icons.person_search_rounded, color: Color(0xFF3267E9))),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Padding(
@@ -59,7 +63,7 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
               controller: _search,
               onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
               decoration: InputDecoration(
-                hintText: 'Cari nama atau percakapan',
+                hintText: 'Cari nama pengguna atau percakapan',
                 hintStyle: const TextStyle(color: Color(0xFF9AA5B5), fontSize: 14),
                 prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF8491A5)),
                 suffixIcon: _query.isEmpty ? null : IconButton(
@@ -112,7 +116,8 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
                       ? profile['displayName'].toString() : 'Pengguna Flowa';
                     final photo = (profile['photoUrl'] ?? '').toString();
                     final online = profile['isOnline'] == true;
-                    final searchable = '$name $productTitle $preview'.toLowerCase();
+                    final username = (profile['username'] ?? '').toString();
+                    final searchable = '$name @$username $productTitle $preview'.toLowerCase();
                     if (_query.isNotEmpty && !searchable.contains(_query)) return const SizedBox.shrink();
                     return Material(
                       color: Colors.white, borderRadius: BorderRadius.circular(19),
