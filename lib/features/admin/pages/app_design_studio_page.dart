@@ -36,6 +36,11 @@ class _AppDesignStudioPageState extends State<AppDesignStudioPage> {
     'upload': 'Pasang Iklan',
     'profile': 'Profil Pengguna',
     'settings': 'Pengaturan Akun',
+    'favorites': 'Favorit',
+    'orders': 'Pesanan',
+    'myListings': 'Iklan Saya',
+    'sellerStore': 'Toko Penjual',
+    'discover': 'Temukan Pengguna',
   };
   static const _palettes = <int>[
     0xFF0866FF, 0xFF6750A4, 0xFF00897B, 0xFFEF6C00,
