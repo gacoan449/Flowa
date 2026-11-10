@@ -134,20 +134,38 @@ class _HomeScreenState extends State<HomeScreen> {
                                       errorBuilder: (_, __, ___) =>
                                           const SizedBox.shrink(),
                                     ),
-                                  if (image.isEmpty)
-                                    Padding(
-                                      padding: const EdgeInsets.all(14),
-                                      child: Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: Text(
-                                          (data['title'] ?? 'Promo Flowa').toString(),
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 18,
-                                          ),
+                                  DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.bottomCenter,
+                                        end: Alignment.topCenter,
+                                        colors: [
+                                          Colors.black.withValues(alpha: .62),
+                                          Colors.transparent,
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  Align(
+                                    alignment: Alignment.bottomLeft,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(12),
+                                      child: Text(
+                                        (data['title'] ?? 'Promo Flowa').toString(),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 17,
+                                          shadows: [Shadow(
+                                            color: Colors.black54,
+                                            blurRadius: 5,
+                                          )],
                                         ),
                                       ),
                                     ),
+                                  ),
                                 ],
                               ),
                             );
