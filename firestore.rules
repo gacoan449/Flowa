@@ -97,6 +97,8 @@ service cloud.firestore {
       allow read: if true;
 
       allow create: if signedIn()
+        && get(/databases/$(database)/documents/app_config/platform).data.get('adsEnabled', true) == true
+        && get(/databases/$(database)/documents/app_config/platform).data.get('maintenanceMode', false) == false
         && request.resource.data.sellerId == request.auth.uid
         && request.resource.data.title is string
         && request.resource.data.price is number
@@ -265,6 +267,8 @@ service cloud.firestore {
         // Mendukung pesan teks, emoji, foto, dan voice note.
         // Untuk foto/audio, text boleh kosong selama mediaUrl tersedia.
         allow create: if isChatParticipant()
+          && get(/databases/$(database)/documents/app_config/platform).data.get('chatEnabled', true) == true
+          && get(/databases/$(database)/documents/app_config/platform).data.get('maintenanceMode', false) == false
           && chatIsNotBlocked()
           && request.resource.data.senderId == request.auth.uid
           && request.resource.data.keys().hasOnly([
