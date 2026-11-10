@@ -74,12 +74,16 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _ensureChat() async {
     if (widget.sellerId.isEmpty || widget.sellerId == _uid) throw StateError('ID penjual tidak valid.');
-    await _chat.set({
+    final metadata = <String, dynamic>{
       'participants': ([_uid, widget.sellerId]..sort()),
-      'productId': widget.productId,
-      'productTitle': widget.productTitle,
       'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    };
+    // Direct messages must not erase an existing product context for this pair.
+    if (widget.productId.isNotEmpty) {
+      metadata['productId'] = widget.productId;
+      metadata['productTitle'] = widget.productTitle;
+    }
+    await _chat.set(metadata, SetOptions(merge: true));
     try { await ChatProfileService.setPresence(_uid, true); } catch (_) {}
   }
 
