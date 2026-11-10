@@ -146,7 +146,8 @@ exports.createMarketplaceOrder = onCall(async (request) => {
   if (typeof productId !== "string" || !productId ||
       !Number.isInteger(quantity) || quantity < 1 || quantity > 99 ||
       !["cod", "wallet"].includes(paymentMethod) ||
-      !["delivery", "meetup"].includes(deliveryMethod) ||\n      (deliveryMethod === "delivery" && (typeof deliveryAddress !== "string" || deliveryAddress.trim().length < 8))) {
+      !["delivery", "meetup"].includes(deliveryMethod) ||
+      (deliveryMethod === "delivery" && (typeof deliveryAddress !== "string" || deliveryAddress.trim().length < 8))) {
     throw new HttpsError("invalid-argument", "Detail pesanan tidak valid.");
   }
   const settingsSnap = await db.collection("app_config").doc("platform").get();
@@ -206,7 +207,8 @@ exports.createMarketplaceOrder = onCall(async (request) => {
       productId, productTitle: product.title || "Produk",
       productImage: product.imageUrl || "", quantity, unitPrice, subtotal,
       serviceFee, total, paymentMethod, deliveryMethod,
-      deliveryAddress: typeof deliveryAddress === "string" ? deliveryAddress.trim().slice(0, 500) : "",\n      note: typeof note === "string" ? note.slice(0, 500) : "",
+      deliveryAddress: typeof deliveryAddress === "string" ? deliveryAddress.trim().slice(0, 500) : "",
+      note: typeof note === "string" ? note.slice(0, 500) : "",
       status: paymentMethod === "wallet" ? "paid" : "awaiting_confirmation",
       paymentStatus: paymentMethod === "wallet" ? "paid" : "pay_on_delivery",
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
