@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui' as ui;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -16,11 +15,11 @@ import 'core/notification_service.dart';
 Future<void> _recordClientFailure(Object error, StackTrace stack, String source) async {
   try {
     await FirebaseFirestore.instance.collection('client_error_logs').add({
-      'message': error.toString().substring(0, error.toString().length.clamp(0, 3000)),
-      'stack': stack.toString().substring(0, stack.toString().length.clamp(0, 6000)),
+      'message': error.toString().length > 3000 ? error.toString().substring(0, 3000) : error.toString(),
+      'stack': stack.toString().length > 6000 ? stack.toString().substring(0, 6000) : stack.toString(),
       'source': source,
       'uid': FirebaseAuth.instance.currentUser?.uid ?? '',
-      'platform': ui.Platform.operatingSystem,
+      'platform': defaultTargetPlatform.name,
       'createdAt': FieldValue.serverTimestamp(),
     });
   } catch (_) {
