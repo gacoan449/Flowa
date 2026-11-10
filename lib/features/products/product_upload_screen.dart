@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -20,6 +21,7 @@ class _ProductUploadScreenState extends State<ProductUploadScreen> {
   final images = <File>[];
   bool loading = false;
   String locationStatus = 'GPS penjual akan diambil saat iklan diterbitkan.';
+  String category = 'Lainnya';
 
   Future<void> pick() async {
     try {
@@ -53,6 +55,7 @@ class _ProductUploadScreenState extends State<ProductUploadScreen> {
         images: images,
         latitude: position.latitude,
         longitude: position.longitude,
+        category: category,
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -105,6 +108,29 @@ class _ProductUploadScreenState extends State<ProductUploadScreen> {
               controller: price,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(labelText: 'Harga (Rp) *'),
+            ),
+            StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: FirebaseFirestore.instance.collection('categories')
+                  .where('active', isEqualTo: true).snapshots(),
+              builder: (context, snapshot) {
+                final options = (snapshot.data?.docs ?? [])
+                    .map((doc) => (doc.data()['name'] ?? '').toString())
+                    .where((name) => name.isNotEmpty)
+                    .toSet()
+                    .toList();
+                if (!options.contains('Lainnya')) options.add('Lainnya');
+                final selected = options.contains(category) ? category : options.first;
+                return DropdownButtonFormField<String>(
+                  value: selected,
+                  decoration: const InputDecoration(labelText: 'Kategori produk'),
+                  items: options.map((name) => DropdownMenuItem(
+                    value: name, child: Text(name),
+                  )).toList(),
+                  onChanged: loading ? null : (value) {
+                    if (value != null) setState(() => category = value);
+                  },
+                );
+              },
             ),
             TextField(
               controller: description,
