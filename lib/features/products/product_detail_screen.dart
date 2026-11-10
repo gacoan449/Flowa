@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../../core/app_appearance.dart';
 
 import '../chat/chat_profile_service.dart';
 import '../chat/chat_screen.dart';
@@ -147,7 +148,7 @@ class ProductDetailScreen extends StatelessWidget {
         final price = _rupiah(product['price']);
 
         return Scaffold(
-          backgroundColor: const Color(0xFFF5F7FB),
+          backgroundColor: Theme.of(context).extension<FlowaDesignTokens>()?.backgroundFor('marketplace', Theme.of(context).scaffoldBackgroundColor),
           appBar: AppBar(
             backgroundColor: Colors.white,
             surfaceTintColor: Colors.transparent,
