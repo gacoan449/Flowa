@@ -6,7 +6,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'firebase_options.dart';
-import 'features/auth/auth_gate.dart';
 import 'features/chat/chat_profile_service.dart';
 import 'core/app_theme.dart';
 import 'core/brand_splash_screen.dart';
