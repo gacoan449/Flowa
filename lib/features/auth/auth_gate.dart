@@ -151,9 +151,11 @@ class _UserProfileGateState extends State<_UserProfileGate> with WidgetsBindingO
         }
         switch (snapshot.data) {
           case 'admin':
+            return const AdminDashboard(staffRole: 'admin');
           case 'moderator':
+            return const AdminDashboard(staffRole: 'moderator');
           case 'support':
-            return const AdminDashboard();
+            return const AdminDashboard(staffRole: 'support');
           case 'suspended':
             return _AuthMessage(
               title: 'Akun dinonaktifkan',
