@@ -1,6 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import '../../core/services/cloudinary_service.dart';
 
 import '../auth/auth_service.dart';
 import '../chat/support_chat_screen.dart';
@@ -28,9 +31,18 @@ class ProfileScreen extends StatelessWidget {
               final username = (profile['username'] ?? '').toString();
               final photo = (profile['photoUrl'] ?? '').toString();
               return Column(children: [
-                CircleAvatar(radius: 38, backgroundColor: const Color(0xFFEAF0FF),
-                  backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
-                  child: photo.isEmpty ? const Icon(Icons.person, size: 40) : null),
+                Stack(alignment: Alignment.bottomRight, children: [
+                  CircleAvatar(radius: 42, backgroundColor: const Color(0xFFEAF0FF),
+                    backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
+                    child: photo.isEmpty ? const Icon(Icons.account_circle_rounded, size: 58, color: Color(0xFF7894C8)) : null),
+                  Positioned(right: 0, bottom: 0, child: Material(
+                    color: const Color(0xFF1769E8), shape: const CircleBorder(),
+                    child: InkWell(customBorder: const CircleBorder(),
+                      onTap: user == null ? null : () => _pickProfilePhoto(context, user.uid),
+                      child: const Padding(padding: EdgeInsets.all(7),
+                        child: Icon(Icons.camera_alt_rounded, color: Colors.white, size: 17))),
+                  )),
+                ]),
                 const SizedBox(height: 12),
                 Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
                 if (username.isNotEmpty) Text('@$username', style: const TextStyle(color: Color(0xFF477CF4))),
@@ -82,6 +94,20 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _pickProfilePhoto(BuildContext context, String uid) async {
+    try {
+      final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 82, maxWidth: 1200);
+      if (picked == null) return;
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mengunggah foto profil...')));
+      final url = await CloudinaryService.uploadImage(File(picked.path), folder: 'flowa/profiles/$uid');
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({'photoUrl': url, 'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+      await ChatProfileService.syncCurrentUser();
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Foto profil berhasil diperbarui.')));
+    } catch (_) {
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Foto gagal diunggah. Coba lagi dengan koneksi yang stabil.')));
+    }
+  }
+
   Future<void> _editDisplayName(BuildContext context, String uid, String currentName) async {
     final controller = TextEditingController(text: currentName);
     final value = await showDialog<String>(
@@ -109,7 +135,7 @@ class ProfileScreen extends StatelessWidget {
         const SnackBar(content: Text('Nama tampilan berhasil diperbarui.')));
     } catch (e) {
       if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Nama gagal diperbarui: $e')));
+        const SnackBar(content: Text('Nama gagal diperbarui. Periksa koneksi lalu coba lagi.')));
     } finally { controller.dispose(); }
   }
 
