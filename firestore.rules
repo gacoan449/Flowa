@@ -19,8 +19,16 @@ service cloud.firestore {
       return signedIn()
         && (
           request.auth.token.email == 'flowa324@gmail.com'
-          || request.auth.token.email == 'Flowa324@gmail.com'
+          || request.auth.token.admin == true
+          || request.auth.token.role == 'admin'
         );
+    }
+
+    function hasPermission(permission) {
+      return isAdmin()
+        || (signedIn()
+          && request.auth.token.permissions is list
+          && permission in request.auth.token.permissions);
     }
 
     // ==============================
@@ -402,6 +410,45 @@ service cloud.firestore {
 
         allow update, delete: if false;
       }
+    }
+
+    // ==============================
+    // MARKETPLACE ORDERS & WALLET LEDGER
+    // All financial/order writes are server-only via Cloud Functions.
+    // ==============================
+
+    match /orders/{orderId} {
+      allow read: if signedIn()
+        && (resource.data.buyerId == request.auth.uid
+          || resource.data.sellerId == request.auth.uid
+          || hasPermission('orders')
+          || hasPermission('disputes'));
+      allow create, update, delete: if false;
+    }
+
+    match /wallets/{userId} {
+      allow read: if isOwner(userId) || hasPermission('finance');
+      allow create, update, delete: if false;
+    }
+
+    match /wallet_transactions/{transactionId} {
+      allow read: if signedIn()
+        && (resource.data.uid == request.auth.uid || hasPermission('finance'));
+      allow create, update, delete: if false;
+    }
+
+    // ==============================
+    // CLIENT FAILURE LOGS
+    // ==============================
+
+    match /client_error_logs/{logId} {
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          'uid', 'message', 'stack', 'source', 'platform', 'createdAt'
+        ]);
+      allow read: if hasPermission('system');
+      allow update, delete: if false;
     }
 
     // ==============================
