@@ -57,6 +57,19 @@ class _AdminDashboardState extends State<AdminDashboard> {
         _AdminModule('Statistik','Ringkasan data operasional Flowa',Icons.analytics_outlined,const StatisticsAdminPage()),
       ],
     };
+    if (widget.staffRole == 'moderator') {
+      groups.remove('Layanan & Analitik');
+      groups.remove('Platform & Sistem');
+      groups['Operasional Marketplace'] = groups['Operasional Marketplace']!
+          .where((m) => m.title == 'Iklan & Moderasi').toList();
+    } else if (widget.staffRole == 'support') {
+      groups.remove('Konten & Tampilan');
+      groups.remove('Platform & Sistem');
+      groups['Operasional Marketplace'] = groups['Operasional Marketplace']!
+          .where((m) => m.title == 'Manajemen Pesanan').toList();
+      groups['Layanan & Analitik'] = groups['Layanan & Analitik']!
+          .where((m) => m.title == 'Customer Service').toList();
+    }
     final q=_search.text.trim().toLowerCase();
     return Scaffold(
       appBar:AppBar(
