@@ -1,8 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../auth/auth_service.dart';
 import '../chat/support_chat_screen.dart';
+import '../chat/chat_profile_service.dart';
 import '../favorites/favorites_screen.dart';
 import '../products/my_listings_screen.dart';
 import 'settings_screen.dart';
@@ -18,13 +20,27 @@ class ProfileScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const CircleAvatar(radius: 38, child: Icon(Icons.person, size: 40)),
-          const SizedBox(height: 12),
-          Center(
-            child: Text(
-              user?.displayName ?? user?.email ?? 'Pengguna',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-            ),
+          StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            stream: user == null ? null : ChatProfileService.watch(user.uid),
+            builder: (context, snapshot) {
+              final profile = snapshot.data?.data() ?? {};
+              final name = (profile['displayName'] ?? user?.displayName ?? 'Pengguna Flowa').toString();
+              final username = (profile['username'] ?? '').toString();
+              final photo = (profile['photoUrl'] ?? '').toString();
+              return Column(children: [
+                CircleAvatar(radius: 38, backgroundColor: const Color(0xFFEAF0FF),
+                  backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
+                  child: photo.isEmpty ? const Icon(Icons.person, size: 40) : null),
+                const SizedBox(height: 12),
+                Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                if (username.isNotEmpty) Text('@$username', style: const TextStyle(color: Color(0xFF477CF4))),
+                TextButton.icon(
+                  onPressed: user == null ? null : () => _editDisplayName(context, user.uid, name),
+                  icon: const Icon(Icons.edit_outlined, size: 17),
+                  label: const Text('Ubah nama tampilan'),
+                ),
+              ]);
+            },
           ),
           const SizedBox(height: 24),
           _menu(context, Icons.inventory_2_outlined, 'Iklan Saya',
@@ -64,6 +80,37 @@ class ProfileScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _editDisplayName(BuildContext context, String uid, String currentName) async {
+    final controller = TextEditingController(text: currentName);
+    final value = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Nama tampilan'),
+        content: TextField(controller: controller, autofocus: true, maxLength: 40,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(hintText: 'Nama yang terlihat oleh pengguna lain')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Batal')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, controller.text.trim()),
+            child: const Text('Simpan')),
+        ],
+      ),
+    );
+    if (value == null || value.isEmpty) { controller.dispose(); return; }
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'name': value,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      await ChatProfileService.syncCurrentUser(displayName: value);
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nama tampilan berhasil diperbarui.')));
+    } catch (e) {
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Nama gagal diperbarui: $e')));
+    } finally { controller.dispose(); }
   }
 
   Widget _menu(BuildContext context, IconData icon, String title,
