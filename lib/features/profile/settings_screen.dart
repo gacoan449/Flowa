@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../../core/app_appearance.dart';
 import '../chat/chat_profile_service.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -71,7 +72,8 @@ class _SettingsScreenState extends State<SettingsScreen>{
   ]));
   @override Widget build(BuildContext context){
     final u=FirebaseAuth.instance.currentUser;
-    return Scaffold(appBar:AppBar(title:const Text('Pengaturan Akun')),body:ListView(padding:const EdgeInsets.all(16),children:[
+    return Scaffold(
+      backgroundColor: Theme.of(context).extension<FlowaDesignTokens>()?.backgroundFor('settings', Theme.of(context).scaffoldBackgroundColor),appBar:AppBar(title:const Text('Pengaturan Akun')),body:ListView(padding:const EdgeInsets.all(16),children:[
       _section('INFORMASI AKUN',[
         Padding(padding:const EdgeInsets.fromLTRB(16,14,16,4),child:TextField(controller:_name,textCapitalization:TextCapitalization.words,decoration:const InputDecoration(labelText:'Nama tampilan',prefixIcon:Icon(Icons.person_outline)))),
         ListTile(leading:const Icon(Icons.email_outlined),title:const Text('Email'),subtitle:Text(u?.email??'Email tidak tersedia')),
