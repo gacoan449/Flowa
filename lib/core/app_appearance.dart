@@ -83,9 +83,15 @@ class AppAppearance {
     final brightness = dark ? Brightness.dark : Brightness.light;
     final primary = color(config['primaryColor'], 0xFF0866FF);
     final accent = color(config['accentColor'], 0xFF00A8FF);
-    final surface = color(config['surfaceColor'], dark ? 0xFF1B2638 : 0xFFFFFFFF);
-    final scaffold = color(config['scaffoldColor'], dark ? 0xFF101827 : 0xFFF6F8FC);
-    final text = color(config['textColor'], dark ? 0xFFF4F7FC : 0xFF172033);
+    final configuredSurface = color(config['surfaceColor'], 0xFFFFFFFF);
+    final configuredScaffold = color(config['scaffoldColor'], 0xFFF6F8FC);
+    final configuredText = color(config['textColor'], 0xFF172033);
+    final surface = dark && configuredSurface.value == 0xFFFFFFFF
+        ? const Color(0xFF1B2638) : configuredSurface;
+    final scaffold = dark && configuredScaffold.value == 0xFFF6F8FC
+        ? const Color(0xFF101827) : configuredScaffold;
+    final text = dark && configuredText.value == 0xFF172033
+        ? const Color(0xFFF4F7FC) : configuredText;
     final radius = number(config['cornerRadius'], 18).clamp(0.0, 36.0).toDouble();
     final buttonRadius = number(config['buttonRadius'], 14).clamp(0.0, 36.0).toDouble();
     final iconSize = number(config['iconSize'], 22).clamp(14.0, 36.0).toDouble();
