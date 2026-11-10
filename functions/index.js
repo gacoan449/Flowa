@@ -266,7 +266,7 @@ exports.updateMarketplaceOrderStatus = onCall(async (request) => {
     let productSnap = null;
     let walletSnap = null;
     const restoreStock = status === "cancelled" && order.stockRestored !== true;
-    const refundWallet = status === "cancelled" && order.paymentMethod === "wallet" && order.paymentStatus === "paid" && order.refundProcessed !== true;
+    const refundWallet = ["cancelled", "returned"].includes(status) && order.paymentMethod === "wallet" && order.paymentStatus === "paid" && order.refundProcessed !== true;
     const productRef = db.collection("products").doc(order.productId);
     const walletRef = db.collection("wallets").doc(order.buyerId);
     if (restoreStock) productSnap = await tx.get(productRef);
@@ -292,6 +292,8 @@ exports.updateMarketplaceOrderStatus = onCall(async (request) => {
       statusHistory: [...history, { status, by: auth.uid, at: new Date().toISOString() }],
       ...(restoreStock ? { stockRestored: true } : {}),
       ...(refundWallet ? { refundProcessed: true, paymentStatus: "refunded" } : {}),
+      ...(status === "cancelled" && order.paymentMethod === "cod" ? { paymentStatus: "cancelled" } : {}),
+      ...(status === "completed" && order.paymentMethod === "cod" ? { paymentStatus: "collected" } : {}),
     });
     return { orderId, previousStatus: current, status };
   });
