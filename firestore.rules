@@ -108,7 +108,8 @@ service cloud.firestore {
           && request.resource.data.sellerId == resource.data.sellerId
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'title', 'description', 'price', 'imageUrl', 'imageUrls',
-            'category', 'locationName',
+            'category', 'locationName', 'brand', 'condition', 'stock',
+            'isNegotiable', 'deliveryOptions', 'warranty',
             'status', 'updatedAt'
           ])
         )
