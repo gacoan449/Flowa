@@ -156,6 +156,41 @@ class _HomeScreenState extends State<HomeScreen> {
                       );
                     },
                   ),
+                StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                  stream: FirebaseFirestore.instance.collection('announcements')
+                      .where('active', isEqualTo: true).snapshots(),
+                  builder: (context, announcementSnapshot) {
+                    final announcements = announcementSnapshot.data?.docs ?? [];
+                    if (announcements.isEmpty) return const SizedBox.shrink();
+                    final announcement = announcements.first.data();
+                    return Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.fromLTRB(14, 6, 14, 4),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF4D8),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.campaign_outlined, color: Color(0xFF9A6500)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text((announcement['title'] ?? 'Info Flowa').toString(),
+                                  style: const TextStyle(fontWeight: FontWeight.bold)),
+                                Text((announcement['body'] ?? '').toString(),
+                                  maxLines: 2, overflow: TextOverflow.ellipsis),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
                 if (config['showCategories'] == true)
                   StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                     stream: FirebaseFirestore.instance.collection('categories')
