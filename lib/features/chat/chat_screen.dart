@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../../core/app_appearance.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -467,7 +468,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     if (FirebaseAuth.instance.currentUser == null) return const Scaffold(body: Center(child: Text('Silakan login kembali.')));
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FA),
+      backgroundColor: Theme.of(context).extension<FlowaDesignTokens>()?.backgroundFor('chatDetail', Theme.of(context).scaffoldBackgroundColor),
       appBar: AppBar(
         backgroundColor: Colors.white, surfaceTintColor: Colors.transparent, elevation: 0, titleSpacing: 0,
         title: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
