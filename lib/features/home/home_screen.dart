@@ -19,7 +19,7 @@ class _HomeScreenState extends State<HomeScreen>{
       final primary=Color((config['primaryColor'] as num?)?.toInt()??0xFF0758D9);
       final accent=Color((config['accentColor'] as num?)?.toInt()??0xFF00A8FF);
       final background=Color((config['backgroundColor'] as num?)?.toInt()??0xFFF7F9FC);
-      final dark=config['themeMode']=='dark';
+      final dark=config['themeMode']=='dark'||(config['themeMode']=='system'&&Theme.of(context).brightness==Brightness.dark);
       final visibility=config['sectionVisibility'] is Map?Map<String,dynamic>.from(config['sectionVisibility'] as Map):<String,dynamic>{};
       final start=config['promoStartAt'] is Timestamp?(config['promoStartAt'] as Timestamp).toDate():null;
       final end=config['promoEndAt'] is Timestamp?(config['promoEndAt'] as Timestamp).toDate():null;
@@ -33,7 +33,14 @@ class _HomeScreenState extends State<HomeScreen>{
           StreamBuilder<QuerySnapshot<Map<String,dynamic>>>(
             stream:FirebaseFirestore.instance.collection('banners').where('active',isEqualTo:true).snapshots(),
             builder:(context,s){
-              final docs=s.data?.docs??[];
+              final currentTime=DateTime.now();
+              final docs=(s.data?.docs??[]).where((doc){
+                final data=doc.data();
+                final startAt=data['startAt'] is Timestamp?(data['startAt'] as Timestamp).toDate():null;
+                final endAt=data['endAt'] is Timestamp?(data['endAt'] as Timestamp).toDate():null;
+                return (startAt==null||!currentTime.isBefore(startAt))&&
+                    (endAt==null||!currentTime.isAfter(endAt));
+              }).toList();
               if(docs.isEmpty)return Container(width:double.infinity,margin:const EdgeInsets.fromLTRB(14,12,14,4),padding:const EdgeInsets.all(16),decoration:BoxDecoration(color:Theme.of(context).colorScheme.surfaceContainerHighest,borderRadius:BorderRadius.circular(16)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text((config['bannerTitle']??'').toString(),style:const TextStyle(fontWeight:FontWeight.bold,fontSize:16)),Text((config['bannerSubtitle']??'').toString())]));
               return SizedBox(height:bannerHeight,child:ListView.builder(scrollDirection:Axis.horizontal,padding:const EdgeInsets.symmetric(horizontal:14,vertical:8),itemCount:docs.length,itemBuilder:(context,i){
                 final d=docs[i].data(),image=(d['imageUrl']??'').toString();
