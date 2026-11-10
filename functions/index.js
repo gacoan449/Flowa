@@ -257,8 +257,13 @@ exports.updateMarketplaceOrderStatus = onCall(async (request) => {
       (status === "disputed" && settings.disputesEnabled === true && ["completed", "shipped", "processing"].includes(current))
     );
     const adminAction = privileged && (
-      status === "cancelled" || status === "returned" || status === "disputed" ||
-      status === "completed" || status === "processing" || status === "shipped" || status === "confirmed"
+      (status === "cancelled" && ["awaiting_confirmation", "paid", "confirmed"].includes(current)) ||
+      (status === "returned" && ["return_requested", "disputed"].includes(current)) ||
+      (status === "completed" && current === "disputed") ||
+      (status === "confirmed" && ["awaiting_confirmation", "paid"].includes(current)) ||
+      (status === "processing" && current === "confirmed") ||
+      (status === "shipped" && current === "processing") ||
+      (status === "disputed" && ["completed", "shipped", "processing"].includes(current))
     );
     if (!(buyerCancel || sellerAction || buyerRequest || adminAction)) {
       throw new HttpsError("permission-denied", "Akun tidak diizinkan mengubah status pesanan ini.");
