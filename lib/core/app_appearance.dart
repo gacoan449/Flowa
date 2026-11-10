@@ -146,10 +146,17 @@ class AppAppearance {
         minimumSize: Size(0, buttonHeight), shape: buttonShape,
         textStyle: const TextStyle(fontWeight: FontWeight.w700))),
       elevatedButtonTheme: ElevatedButtonThemeData(style: ElevatedButton.styleFrom(
+        backgroundColor: buttonBackground, foregroundColor: buttonForeground,
         minimumSize: Size(0, buttonHeight), shape: buttonShape)),
       outlinedButtonTheme: OutlinedButtonThemeData(style: OutlinedButton.styleFrom(
+        backgroundColor: config['buttonStyle'] == 'soft' ? scheme.secondaryContainer : Colors.transparent,
+        foregroundColor: buttonForeground,
+        side: BorderSide(color: config['buttonStyle'] == 'outlined' ? primary : scheme.outlineVariant),
         minimumSize: Size(0, buttonHeight), shape: buttonShape)),
-      textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(shape: buttonShape)),
+      textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(
+        foregroundColor: primary, shape: buttonShape)),
+      iconButtonTheme: IconButtonThemeData(style: IconButton.styleFrom(
+        foregroundColor: primary, iconSize: iconSize, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius)))),
       inputDecorationTheme: InputDecorationTheme(
         filled: true, fillColor: surface,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(radius),
