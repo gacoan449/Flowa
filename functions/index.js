@@ -87,3 +87,202 @@ exports.notifySupportMessage = onDocumentCreated(
     logger.info("Support notification dispatched", { threadId: event.params.threadId });
   }
 );
+
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
+
+const OWNER_EMAIL = "flowa324@gmail.com";
+const ROLE_PERMISSIONS = {
+  admin: ["dashboard", "content", "marketplace", "orders", "users", "security", "system"],
+  moderator: ["dashboard", "content", "marketplace", "reports"],
+  support: ["dashboard", "chat", "orders", "disputes", "users_read"],
+  customer: [],
+};
+
+function requireSignedIn(request) {
+  if (!request.auth) throw new HttpsError("unauthenticated", "Silakan login terlebih dahulu.");
+  return request.auth;
+}
+function requireOwner(request) {
+  const auth = requireSignedIn(request);
+  if ((auth.token.email || "").toLowerCase() !== OWNER_EMAIL) {
+    throw new HttpsError("permission-denied", "Hanya pemilik Flowa yang dapat mengelola role.");
+  }
+  return auth;
+}
+function hasPermission(auth, permission) {
+  return auth.token.email?.toLowerCase() === OWNER_EMAIL ||
+    auth.token.role === "admin" ||
+    (Array.isArray(auth.token.permissions) && auth.token.permissions.includes(permission));
+}
+
+exports.setStaffRole = onCall(async (request) => {
+  const owner = requireOwner(request);
+  const { uid, role } = request.data || {};
+  if (typeof uid !== "string" || !uid || !Object.prototype.hasOwnProperty.call(ROLE_PERMISSIONS, role) || role === "customer") {
+    throw new HttpsError("invalid-argument", "UID atau role tidak valid.");
+  }
+  const userRecord = await admin.auth().getUser(uid);
+  if ((userRecord.email || "").toLowerCase() === OWNER_EMAIL) {
+    throw new HttpsError("failed-precondition", "Role pemilik utama tidak dapat diubah.");
+  }
+  const permissions = ROLE_PERMISSIONS[role];
+  await admin.auth().setCustomUserClaims(uid, { role, admin: role === "admin", permissions });
+  await db.collection("users").doc(uid).set({
+    role, permissions, roleUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    roleUpdatedBy: owner.uid,
+  }, { merge: true });
+  await db.collection("admin_audit_logs").add({
+    actorUid: owner.uid, targetUid: uid, action: "staff_role_updated",
+    role, permissions, createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+  return { success: true, role, permissions };
+});
+
+exports.createMarketplaceOrder = onCall(async (request) => {
+  const auth = requireSignedIn(request);
+  const { productId, quantity, paymentMethod, deliveryMethod, note } = request.data || {};
+  if (typeof productId !== "string" || !productId ||
+      !Number.isInteger(quantity) || quantity < 1 || quantity > 99 ||
+      !["cod", "wallet"].includes(paymentMethod) ||
+      !["delivery", "meetup"].includes(deliveryMethod)) {
+    throw new HttpsError("invalid-argument", "Detail pesanan tidak valid.");
+  }
+  const settingsSnap = await db.collection("app_config").doc("platform").get();
+  const settings = settingsSnap.data() || {};
+  if (settings.ordersEnabled === false) throw new HttpsError("failed-precondition", "Penerimaan pesanan sedang dinonaktifkan.");
+  if (paymentMethod === "cod" && settings.codEnabled === false) throw new HttpsError("failed-precondition", "COD sedang dinonaktifkan.");
+  if (paymentMethod === "wallet" && settings.walletEnabled === false) throw new HttpsError("failed-precondition", "Pembayaran saldo sedang dinonaktifkan.");
+
+  const productRef = db.collection("products").doc(productId);
+  const orderRef = db.collection("orders").doc();
+  const walletRef = db.collection("wallets").doc(auth.uid);
+  const result = await db.runTransaction(async (tx) => {
+    const productSnap = await tx.get(productRef);
+    if (!productSnap.exists) throw new HttpsError("not-found", "Produk tidak ditemukan.");
+    const product = productSnap.data();
+    if (product.status !== "active") throw new HttpsError("failed-precondition", "Produk tidak tersedia.");
+    if (product.sellerId === auth.uid) throw new HttpsError("failed-precondition", "Kamu tidak dapat membeli produk sendiri.");
+    if (deliveryMethod === "delivery" && !(product.deliveryOptions || []).includes("delivery")) {
+      throw new HttpsError("failed-precondition", "Penjual tidak menyediakan pengiriman.");
+    }
+    if (deliveryMethod === "meetup" && !(product.deliveryOptions || []).includes("meetup")) {
+      throw new HttpsError("failed-precondition", "Penjual tidak menyediakan COD/temu langsung.");
+    }
+    const stock = Number(product.stock || 0);
+    if (stock < quantity) throw new HttpsError("failed-precondition", "Stok produk tidak mencukupi.");
+    const unitPrice = Number(product.price);
+    if (!Number.isSafeInteger(unitPrice) || unitPrice <= 0) throw new HttpsError("failed-precondition", "Harga produk tidak valid.");
+    const subtotal = unitPrice * quantity;
+    const feePercent = Math.max(0, Math.min(100, Number(settings.serviceFeePercent || 0)));
+    const minimumFee = Math.max(0, Number(settings.minimumServiceFee || 0));
+    const serviceFee = Math.max(minimumFee, Math.floor(subtotal * feePercent / 100));
+    const total = subtotal + serviceFee;
+    if (paymentMethod === "wallet") {
+      const walletSnap = await tx.get(walletRef);
+      const balance = Number(walletSnap.data()?.balance || 0);
+      if (balance < total) throw new HttpsError("failed-precondition", "Saldo Flowa tidak mencukupi.");
+      tx.set(walletRef, { balance: balance - total, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      const ledgerRef = db.collection("wallet_transactions").doc();
+      tx.set(ledgerRef, {
+        uid: auth.uid, type: "purchase_debit", amount: total, orderId: orderRef.id,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+    const nextStock = stock - quantity;
+    tx.update(productRef, {
+      stock: nextStock,
+      status: nextStock === 0 ? "sold_out" : "active",
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    tx.set(orderRef, {
+      orderId: orderRef.id, buyerId: auth.uid, sellerId: product.sellerId,
+      productId, productTitle: product.title || "Produk",
+      productImage: product.imageUrl || "", quantity, unitPrice, subtotal,
+      serviceFee, total, paymentMethod, deliveryMethod,
+      note: typeof note === "string" ? note.slice(0, 500) : "",
+      status: paymentMethod === "wallet" ? "paid" : "awaiting_confirmation",
+      paymentStatus: paymentMethod === "wallet" ? "paid" : "pay_on_delivery",
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      statusHistory: [{ status: paymentMethod === "wallet" ? "paid" : "awaiting_confirmation", by: auth.uid, at: new Date().toISOString() }],
+    });
+    return { orderId: orderRef.id, total, status: paymentMethod === "wallet" ? "paid" : "awaiting_confirmation" };
+  });
+  logger.info("Marketplace order created", { orderId: result.orderId, buyerId: auth.uid });
+  return result;
+});
+
+exports.updateMarketplaceOrderStatus = onCall(async (request) => {
+  const auth = requireSignedIn(request);
+  const { orderId, status, reason } = request.data || {};
+  const allowed = ["confirmed", "processing", "shipped", "completed", "cancelled", "return_requested", "returned", "disputed"];
+  if (typeof orderId !== "string" || !allowed.includes(status)) {
+    throw new HttpsError("invalid-argument", "Pesanan atau status tidak valid.");
+  }
+  const ref = db.collection("orders").doc(orderId);
+  const settingsSnap = await db.collection("app_config").doc("platform").get();
+  const settings = settingsSnap.data() || {};
+  const outcome = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw new HttpsError("not-found", "Pesanan tidak ditemukan.");
+    const order = snap.data();
+    const isBuyer = order.buyerId === auth.uid;
+    const isSeller = order.sellerId === auth.uid;
+    const privileged = hasPermission(auth, "orders") || hasPermission(auth, "disputes");
+    const current = order.status;
+    const buyerCancel = status === "cancelled" && isBuyer &&
+      settings.allowBuyerCancellation !== false &&
+      ["awaiting_confirmation", "paid", "confirmed"].includes(current);
+    const sellerAction = isSeller && (
+      (status === "confirmed" && current === "awaiting_confirmation") ||
+      (status === "processing" && current === "confirmed") ||
+      (status === "shipped" && current === "processing") ||
+      (status === "completed" && current === "shipped")
+    );
+    const buyerRequest = isBuyer && (
+      (status === "return_requested" && settings.returnsEnabled === true && current === "completed") ||
+      (status === "disputed" && settings.disputesEnabled === true && !["cancelled", "returned"].includes(current))
+    );
+    const adminAction = privileged && (
+      status === "cancelled" || status === "returned" || status === "disputed" ||
+      status === "completed" || status === "processing" || status === "shipped" || status === "confirmed"
+    );
+    if (!(buyerCancel || sellerAction || buyerRequest || adminAction)) {
+      throw new HttpsError("permission-denied", "Akun tidak diizinkan mengubah status pesanan ini.");
+    }
+    if (status === "cancelled" && ["shipped", "completed", "returned"].includes(current)) {
+      throw new HttpsError("failed-precondition", "Pesanan yang sudah dikirim tidak dapat dibatalkan dengan alur ini.");
+    }
+    if (status === "cancelled" && order.stockRestored !== true) {
+      const productRef = db.collection("products").doc(order.productId);
+      const productSnap = await tx.get(productRef);
+      if (productSnap.exists) {
+        const data = productSnap.data();
+        tx.update(productRef, { stock: Number(data.stock || 0) + Number(order.quantity || 1), status: "active", updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+      }
+      tx.update(ref, { stockRestored: true });
+    }
+    const history = Array.isArray(order.statusHistory) ? order.statusHistory : [];
+    tx.update(ref, {
+      status, statusReason: typeof reason === "string" ? reason.slice(0, 500) : "",
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      statusHistory: [...history, { status, by: auth.uid, at: new Date().toISOString() }],
+    });
+    return { orderId, previousStatus: current, status };
+  });
+  logger.info("Marketplace order status updated", { ...outcome, actorUid: auth.uid });
+  return outcome;
+});
+
+exports.logClientFailure = onCall(async (request) => {
+  const auth = requireSignedIn(request);
+  const { message, stack, source } = request.data || {};
+  if (typeof message !== "string" || !message.trim()) throw new HttpsError("invalid-argument", "Pesan error wajib diisi.");
+  await db.collection("client_error_logs").add({
+    uid: auth.uid, message: message.slice(0, 3000),
+    stack: typeof stack === "string" ? stack.slice(0, 6000) : "",
+    source: typeof source === "string" ? source.slice(0, 80) : "client",
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+  return { success: true };
+});
