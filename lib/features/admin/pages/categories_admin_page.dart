@@ -1,8 +1,39 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-class CategoriesAdminPage extends StatelessWidget {
+class CategoriesAdminPage extends StatefulWidget {
   const CategoriesAdminPage({super.key});
+
+  @override
+  State<CategoriesAdminPage> createState() => _CategoriesAdminPageState();
+}
+
+class _CategoriesAdminPageState extends State<CategoriesAdminPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _seedDefaults());
+  }
+
+  Future<void> _seedDefaults() async {
+    final collection = FirebaseFirestore.instance.collection('categories');
+    final existing = await collection.limit(1).get();
+    if (existing.docs.isNotEmpty) return;
+    const defaults = [
+      'Mobil', 'Motor', 'Properti', 'Elektronik',
+      'Fashion', 'Rumah Tangga', 'Hobi', 'Lainnya',
+    ];
+    final batch = FirebaseFirestore.instance.batch();
+    for (final name in defaults) {
+      final id = name.toLowerCase().replaceAll(' ', '_');
+      batch.set(collection.doc(id), {
+        'name': name,
+        'active': true,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    }
+    await batch.commit();
+  }
 
   Future<void> _edit(BuildContext context, {
     DocumentReference<Map<String, dynamic>>? ref,
