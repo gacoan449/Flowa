@@ -131,7 +131,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<bool> _sendPayload(Map<String, dynamic> payload, String preview) async {
-    if (_sending) return;
+    if (_sending) return false;
     setState(() => _sending = true);
     try {
       await _chatReady;
@@ -247,7 +247,9 @@ class _ChatScreenState extends State<ChatScreen> {
       if (!mounted) return;
       setState(() {
         _recordedAudioPath = path;
-        _recordedAudioDuration = recordedDuration ?? _recordingElapsed;
+        _recordedAudioDuration = (recordedDuration == null || recordedDuration == Duration.zero)
+            ? _recordingElapsed
+            : recordedDuration;
       });
     } catch (e) {
       if (mounted) {
