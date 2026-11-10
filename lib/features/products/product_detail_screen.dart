@@ -6,6 +6,7 @@ import '../chat/chat_profile_service.dart';
 import '../chat/chat_screen.dart';
 import 'product_service.dart';
 import 'seller_store_screen.dart';
+import '../orders/order_service.dart';
 
 class ProductDetailScreen extends StatelessWidget {
   final String productId;
@@ -23,6 +24,95 @@ class ProductDetailScreen extends StatelessWidget {
       out.write(digits[i]);
     }
     return 'Rp $out';
+  }
+
+  Future<void> _placeOrder(BuildContext context, Map<String, dynamic> product) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Login dahulu untuk membuat pesanan.')));
+      return;
+    }
+    final rawOptions = product['deliveryOptions'];
+    final options = rawOptions is List
+        ? rawOptions.map((e) => e.toString()).where((e) => ['delivery','meetup'].contains(e)).toList()
+        : <String>['delivery','meetup'];
+    if (options.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Penjual belum mengatur metode serah terima.')));
+      return;
+    }
+    final quantityController = TextEditingController(text: '1');
+    final addressController = TextEditingController();
+    final noteController = TextEditingController();
+    String delivery = options.first;
+    String payment = 'cod';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(builder: (context, setDialogState) => AlertDialog(
+        title: const Text('Buat Pesanan'),
+        content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text('Stok tersedia: ${product['stock'] ?? 1}'),
+          const SizedBox(height: 12),
+          TextField(controller: quantityController, keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'Jumlah barang')),
+          const SizedBox(height: 10),
+          DropdownButtonFormField<String>(
+            initialValue: delivery,
+            decoration: const InputDecoration(labelText: 'Metode serah terima'),
+            items: [
+              if (options.contains('delivery')) const DropdownMenuItem(value: 'delivery', child: Text('Pengiriman')),
+              if (options.contains('meetup')) const DropdownMenuItem(value: 'meetup', child: Text('Temu langsung')),
+            ],
+            onChanged: (v) => setDialogState(() => delivery = v ?? delivery),
+          ),
+          if (delivery == 'delivery') ...[
+            const SizedBox(height: 10),
+            TextField(controller: addressController, maxLines: 2,
+              decoration: const InputDecoration(labelText: 'Alamat lengkap penerima')),
+          ],
+          const SizedBox(height: 10),
+          DropdownButtonFormField<String>(
+            initialValue: payment,
+            decoration: const InputDecoration(labelText: 'Metode pembayaran'),
+            items: const [
+              DropdownMenuItem(value: 'cod', child: Text('COD / Bayar saat serah terima')),
+              DropdownMenuItem(value: 'wallet', child: Text('Saldo Flowa')),
+            ],
+            onChanged: (v) => setDialogState(() => payment = v ?? 'cod'),
+          ),
+          const SizedBox(height: 10),
+          TextField(controller: noteController, maxLines: 2,
+            decoration: const InputDecoration(labelText: 'Catatan untuk penjual (opsional)')),
+        ])),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Batal')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Konfirmasi')),
+        ],
+      )),
+    );
+    if (confirmed != true) {
+      quantityController.dispose(); addressController.dispose(); noteController.dispose();
+      return;
+    }
+    try {
+      final quantity = int.tryParse(quantityController.text.trim()) ?? 0;
+      final result = await OrderService().createOrder(
+        productId: productId,
+        quantity: quantity,
+        paymentMethod: payment,
+        deliveryMethod: delivery,
+        deliveryAddress: addressController.text.trim(),
+        note: noteController.text.trim(),
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Pesanan berhasil dibuat • ID ${result['orderId']}')));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Pesanan gagal dibuat: $e')));
+      }
+    } finally {
+      quantityController.dispose(); addressController.dispose(); noteController.dispose();
+    }
   }
 
   @override
@@ -175,7 +265,8 @@ class ProductDetailScreen extends StatelessWidget {
               decoration: const BoxDecoration(color: Colors.white, boxShadow: [
                 BoxShadow(color: Color(0x140D1B32), blurRadius: 15, offset: Offset(0, -4)),
               ]),
-              child: Row(children: [
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Row(children: [
                 Expanded(
                   child: OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
@@ -265,6 +356,13 @@ class ProductDetailScreen extends StatelessWidget {
                   ),
                 ),
               ]),
+              const SizedBox(height: 9),
+              SizedBox(width: double.infinity, child: FilledButton.icon(
+                onPressed: user == null || sellerId == user.uid ? null : () => _placeOrder(context, product),
+                icon: const Icon(Icons.shopping_bag_outlined),
+                label: const Text('Beli / Buat Pesanan'),
+              )),
+            ]),
             ),
           ),
         );
