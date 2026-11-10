@@ -29,8 +29,8 @@ class _HomeScreenState extends State<HomeScreen>{
       final columns=(config['productColumns'] as num?)?.toInt()??2;
       final spacing=(config['productSpacing'] as num?)?.toDouble()??10;
       final sections=<String,Widget>{
-        'banner':if(config['showBanner']==true&&visibility['banner']!=false&&promoWindow)
-          StreamBuilder<QuerySnapshot<Map<String,dynamic>>>(
+        if(config['showBanner']==true&&visibility['banner']!=false&&promoWindow)
+          'banner':StreamBuilder<QuerySnapshot<Map<String,dynamic>>>(
             stream:FirebaseFirestore.instance.collection('banners').where('active',isEqualTo:true).snapshots(),
             builder:(context,s){
               final currentTime=DateTime.now();
@@ -51,20 +51,20 @@ class _HomeScreenState extends State<HomeScreen>{
                 ]));
               }));
             }),
-        'announcement':if(visibility['announcement']!=false)
-          StreamBuilder<QuerySnapshot<Map<String,dynamic>>>(
+        if(visibility['announcement']!=false)
+          'announcement':StreamBuilder<QuerySnapshot<Map<String,dynamic>>>(
             stream:FirebaseFirestore.instance.collection('announcements').where('active',isEqualTo:true).snapshots(),
             builder:(context,s){final docs=s.data?.docs??[];if(docs.isEmpty)return const SizedBox.shrink();final d=docs.first.data();return Container(width:double.infinity,margin:const EdgeInsets.fromLTRB(14,6,14,4),padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:const Color(0xFFFFF4D8),borderRadius:BorderRadius.circular(12)),child:Row(children:[const Icon(Icons.campaign_outlined,color:Color(0xFF9A6500)),const SizedBox(width:8),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text((d['title']??'Info Flowa').toString(),style:const TextStyle(fontWeight:FontWeight.bold)),Text((d['body']??'').toString(),maxLines:2,overflow:TextOverflow.ellipsis)]))]));}),
-        'categories':if(config['showCategories']==true&&visibility['categories']!=false)
-          StreamBuilder<QuerySnapshot<Map<String,dynamic>>>(
+        if(config['showCategories']==true&&visibility['categories']!=false)
+          'categories':StreamBuilder<QuerySnapshot<Map<String,dynamic>>>(
             stream:FirebaseFirestore.instance.collection('categories').where('active',isEqualTo:true).snapshots(),
             builder:(context,s){final docs=s.data?.docs??[];if(docs.isEmpty)return const SizedBox(height:8);return SizedBox(height:54,child:ListView(scrollDirection:Axis.horizontal,padding:const EdgeInsets.symmetric(horizontal:12,vertical:7),children:[
               ChoiceChip(label:const Text('Semua'),selected:selectedCategory==null,onSelected:(_)=>setState(()=>selectedCategory=null)),
               const SizedBox(width:6),
               ...docs.map((doc){final name=(doc.data()['name']??'').toString();return Padding(padding:const EdgeInsets.only(right:6),child:ChoiceChip(label:Text(name),selected:selectedCategory==name,onSelected:(_)=>setState(()=>selectedCategory=name)));}),
             ]));}),
-        'products':if(visibility['products']!=false)
-          MarketplaceScreen(selectedCategory:selectedCategory,productColumns:columns,productSpacing:spacing,embedded:true),
+        if(visibility['products']!=false)
+          'products':MarketplaceScreen(selectedCategory:selectedCategory,productColumns:columns,productSpacing:spacing,embedded:true),
       };
       final rawOrder=config['sectionOrder'];
       final order=<String>[];
