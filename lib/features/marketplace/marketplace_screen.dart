@@ -33,7 +33,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       setState((){_buyerPosition=p;_locationLoading=false;});
     }catch(e){
       if(!mounted)return;
-      setState((){_buyerPosition=null;_locationLoading=false;_locationError=e.toString().replaceFirst('Bad state: ','');});
+      setState((){_buyerPosition=null;_locationLoading=false;_locationError='Lokasi tidak tersedia';});
     }
   }
   bool _validCoordinates(dynamic lat,dynamic lng)=>lat is num&&lng is num&&lat>=-90&&lat<=90&&lng>=-180&&lng<=180&&!(lat==0&&lng==0);
@@ -53,7 +53,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       child:Row(children:[
         Icon(_locationLoading?Icons.gps_not_fixed:(_locationError==null?Icons.my_location:Icons.location_off),size:19),
         const SizedBox(width:8),
-        Expanded(child:Text(_locationLoading?'Mencari lokasi GPS kamu...':(_locationError==null?'Jarak dihitung dari lokasi GPS kamu.':'Jarak belum tersedia. ${_locationError??'Aktifkan GPS.'}'),style:const TextStyle(fontSize:12))),
+        Expanded(child:Text(_locationLoading?'Mencari lokasi GPS kamu...':(_locationError==null?'Jarak dihitung dari lokasi GPS kamu.':'Jarak belum tersedia. Aktifkan GPS atau periksa izin lokasi.'),style:const TextStyle(fontSize:12))),
         IconButton(tooltip:'Perbarui GPS',onPressed:_locationLoading?null:_refreshBuyerLocation,icon:const Icon(Icons.refresh,size:20)),
       ]),
     ),
@@ -61,7 +61,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   Widget _productGrid()=>StreamBuilder<QuerySnapshot<Map<String,dynamic>>>(
     stream:FirebaseFirestore.instance.collection('products').where('status',isEqualTo:'active').snapshots(),
     builder:(context,snapshot){
-      if(snapshot.hasError)return Center(child:Padding(padding:const EdgeInsets.all(20),child:Text('Produk belum dapat dimuat: ${snapshot.error}')));
+      if(snapshot.hasError)return const Center(child:Padding(padding:EdgeInsets.all(20),child:Text('Produk belum bisa dimuat. Periksa koneksi lalu coba lagi.')));
       if(!snapshot.hasData)return const Center(child:CircularProgressIndicator());
       final docs=snapshot.data!.docs.where((doc){
         final selected=widget.selectedCategory;
