@@ -7,7 +7,9 @@ import '../../core/services/location_service.dart';
 import '../products/product_detail_screen.dart';
 
 class MarketplaceScreen extends StatefulWidget {
-  const MarketplaceScreen({super.key});
+  const MarketplaceScreen({super.key, this.selectedCategory});
+
+  final String? selectedCategory;
 
   @override
   State<MarketplaceScreen> createState() => _MarketplaceScreenState();
@@ -119,7 +121,11 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                final docs = snapshot.data?.docs ?? [];
+                final docs = (snapshot.data?.docs ?? []).where((doc) {
+                  final selected = widget.selectedCategory;
+                  return selected == null ||
+                      (doc.data()['category'] ?? 'Lainnya').toString() == selected;
+                }).toList();
                 if (docs.isEmpty) {
                   return const Center(child: Text(
                     'Belum ada produk aktif. Jadilah yang pertama memasang iklan!',
