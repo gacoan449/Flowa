@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../../core/app_appearance.dart';
+import '../../../core/app_appearance.dart';
 import '../../orders/order_service.dart';
 
 class OrdersAdminPage extends StatelessWidget {
