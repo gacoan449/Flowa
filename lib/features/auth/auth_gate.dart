@@ -199,8 +199,7 @@ class _MaintenanceAwareHome extends StatelessWidget {
                   const Text('Flowa sedang pemeliharaan', style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   Text((config['maintenanceMessage'] ?? 'Silakan coba kembali nanti.').toString(), textAlign: TextAlign.center),
-                  const SizedBox(height: 16),
-                  OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.refresh), label: const Text('Memeriksa otomatis')),
+
                 ]),
               ),
             ),
