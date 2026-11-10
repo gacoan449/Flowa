@@ -12,6 +12,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../core/services/cloudinary_service.dart';
 import 'chat_profile_service.dart';
+import 'public_user_profile_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   final String sellerId;
@@ -476,19 +477,24 @@ class _ChatScreenState extends State<ChatScreen> {
             final name = (profile['displayName'] ?? '').toString().trim().isEmpty
               ? widget.sellerName : profile['displayName'].toString();
             final photo = (profile['photoUrl'] ?? '').toString();
-            return Row(children: [
-              CircleAvatar(radius: 20, backgroundColor: const Color(0xFFEAF0FF),
-                backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
-                child: photo.isEmpty ? const Icon(Icons.person_rounded, color: Color(0xFF477CF4)) : null),
-              const SizedBox(width: 10),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(name, maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF1B2940))),
-                const SizedBox(height: 2),
-                Text(profile['isOnline'] == true ? '● Aktif sekarang' : _lastSeen(profile['lastSeen']),
-                  style: TextStyle(fontSize: 10, color: profile['isOnline'] == true ? const Color(0xFF20A56B) : const Color(0xFF8793A5))),
-              ])),
-            ]);
+            return InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) =>
+                PublicUserProfileScreen(userId: widget.sellerId, displayName: name))),
+              child: Row(children: [
+                CircleAvatar(radius: 20, backgroundColor: const Color(0xFFEAF0FF),
+                  backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
+                  child: photo.isEmpty ? const Icon(Icons.person_rounded, color: Color(0xFF477CF4)) : null),
+                const SizedBox(width: 10),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(name, maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF1B2940))),
+                  const SizedBox(height: 2),
+                  Text(profile['isOnline'] == true ? '● Aktif sekarang' : _lastSeen(profile['lastSeen']),
+                    style: TextStyle(fontSize: 10, color: profile['isOnline'] == true ? const Color(0xFF20A56B) : const Color(0xFF8793A5))),
+                ])),
+              ]),
+            );
           },
         ),
         actions: [
