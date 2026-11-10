@@ -113,6 +113,9 @@ jobs:
           PY
           dart run flutter_launcher_icons
 
+      - name: Validate Cloud Functions JavaScript syntax
+        run: node --check functions/index.js
+
       - name: Analyze project
         run: flutter analyze lib --no-fatal-infos
 
