@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../../core/app_appearance.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import '../../core/services/cloudinary_service.dart';
@@ -19,6 +20,7 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     return Scaffold(
+      backgroundColor: Theme.of(context).extension<FlowaDesignTokens>()?.backgroundFor('profile', Theme.of(context).scaffoldBackgroundColor),
       appBar: AppBar(title: const Text('Profil Saya'), actions: [IconButton(icon: const Icon(Icons.settings_outlined), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())))],),
       body: ListView(
         padding: const EdgeInsets.all(20),
