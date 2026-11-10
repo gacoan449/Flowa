@@ -56,6 +56,7 @@ class OrdersAdminPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Theme.of(context).extension<FlowaDesignTokens>()?.backgroundFor('admin', Theme.of(context).scaffoldBackgroundColor),
     appBar: AppBar(title: const Text('Manajemen Pesanan')),
     body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: FirebaseFirestore.instance.collection('orders').orderBy('createdAt', descending: true).limit(100).snapshots(),
