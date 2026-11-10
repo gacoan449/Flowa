@@ -1,2 +1,24 @@
-import 'package:cloud_firestore/cloud_firestore.dart'; import 'package:firebase_auth/firebase_auth.dart'; import 'package:flutter/material.dart'; import 'admin_dashboard.dart';
-class AdminGuard extends StatelessWidget{const AdminGuard({super.key});@override Widget build(BuildContext c){final uid=FirebaseAuth.instance.currentUser?.uid;if(uid==null)return const Scaffold(body:Center(child:Text('Silakan login.')));return FutureBuilder<DocumentSnapshot<Map<String,dynamic>>>(future:FirebaseFirestore.instance.collection('users').doc(uid).get(),builder:(c,s){if(!s.hasData)return const Scaffold(body:Center(child:CircularProgressIndicator()));if(s.data!.data()?['role']!='admin')return const Scaffold(body:Center(child:Text('Akses admin ditolak.')));return const AdminDashboard();});}}
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'admin_dashboard.dart';
+
+class AdminGuard extends StatelessWidget {
+  const AdminGuard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    final email = (user?.email ?? '').trim().toLowerCase();
+    final isAdmin = user != null &&
+        user.emailVerified &&
+        email == 'flowa324@gmail.com';
+
+    if (!isAdmin) {
+      return const Scaffold(
+        body: Center(child: Text('Akses admin ditolak.')),
+      );
+    }
+
+    return const AdminDashboard();
+  }
+}
