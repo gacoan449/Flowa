@@ -66,14 +66,14 @@ service cloud.firestore {
       allow create: if isOwner(userId)
         && request.resource.data.uid == userId
         && request.resource.data.keys().hasOnly([
-          'uid', 'displayName', 'photoUrl',
+          'uid', 'displayName', 'username', 'bio', 'photoUrl',
           'isOnline', 'lastSeen', 'updatedAt'
         ]);
 
       allow update: if isOwner(userId)
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.keys().hasOnly([
-          'uid', 'displayName', 'photoUrl',
+          'uid', 'displayName', 'username', 'bio', 'photoUrl',
           'isOnline', 'lastSeen', 'updatedAt'
         ]);
 
