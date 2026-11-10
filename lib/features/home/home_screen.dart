@@ -24,11 +24,6 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, configSnapshot) {
         final config = <String, dynamic>{...HomeConfigService.defaults}
           ..addAll(configSnapshot.data?.data() ?? {});
-        final categories = (config['categories'] as List<dynamic>? ??
-                HomeConfigService.defaults['categories'] as List<dynamic>)
-            .map((e) => e.toString())
-            .toList();
-
         return Scaffold(
           body: SafeArea(
             child: Column(
@@ -162,35 +157,39 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   ),
                 if (config['showCategories'] == true)
-                  SizedBox(
-                    height: 54,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 7,
-                      ),
-                      children: [
-                        ChoiceChip(
-                          label: const Text('Semua'),
-                          selected: selectedCategory == null,
-                          onSelected: (_) => setState(() => selectedCategory = null),
-                        ),
-                        const SizedBox(width: 6),
-                        ...categories.map(
-                          (category) => Padding(
-                            padding: const EdgeInsets.only(right: 6),
-                            child: ChoiceChip(
-                              label: Text(category),
-                              selected: selectedCategory == category,
-                              onSelected: (_) => setState(
-                                () => selectedCategory = category,
-                              ),
+                  StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                    stream: FirebaseFirestore.instance.collection('categories')
+                        .where('active', isEqualTo: true).snapshots(),
+                    builder: (context, categorySnapshot) {
+                      final categories = categorySnapshot.data?.docs ?? [];
+                      if (categories.isEmpty) return const SizedBox(height: 8);
+                      return SizedBox(
+                        height: 54,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                          children: [
+                            ChoiceChip(
+                              label: const Text('Semua'),
+                              selected: selectedCategory == null,
+                              onSelected: (_) => setState(() => selectedCategory = null),
                             ),
-                          ),
+                            const SizedBox(width: 6),
+                            ...categories.map((doc) {
+                              final category = (doc.data()['name'] ?? '').toString();
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 6),
+                                child: ChoiceChip(
+                                  label: Text(category),
+                                  selected: selectedCategory == category,
+                                  onSelected: (_) => setState(() => selectedCategory = category),
+                                ),
+                              );
+                            }),
+                          ],
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                 Expanded(
                   child: MarketplaceScreen(selectedCategory: selectedCategory),
