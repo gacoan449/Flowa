@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'chat_screen.dart';
+import 'public_user_profile_screen.dart';
 
 class DiscoverUsersScreen extends StatefulWidget {
   const DiscoverUsersScreen({super.key});
@@ -64,8 +65,9 @@ class _DiscoverUsersScreenState extends State<DiscoverUsersScreen> {
                     Text('@$username',style:const TextStyle(color:Color(0xFF477CF4),fontSize:11,fontWeight:FontWeight.w700)),
                     Text(online?'Aktif sekarang':'Pengguna Flowa',style:TextStyle(fontSize:10,color:online?const Color(0xFF22A06B):const Color(0xFF9AA5B5))),
                   ]),
-                  trailing: const Icon(Icons.chat_bubble_outline,color:Color(0xFF477CF4)),
-                  onTap: ()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>ChatScreen(
+                  trailing: const Icon(Icons.storefront_outlined,color:Color(0xFF477CF4)),
+                  onTap: ()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>PublicUserProfileScreen(userId:doc.id,displayName:name))),
+                  onLongPress: ()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>ChatScreen(
                     sellerId:doc.id,sellerName:name,productId:'',productTitle:''))),
                 ));
               });
