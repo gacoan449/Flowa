@@ -149,6 +149,7 @@ exports.createMarketplaceOrder = onCall(async (request) => {
   }
   const settingsSnap = await db.collection("app_config").doc("platform").get();
   const settings = settingsSnap.data() || {};
+  if (settings.maintenanceMode === true) throw new HttpsError("failed-precondition", "Flowa sedang dalam pemeliharaan.");
   if (settings.ordersEnabled === false) throw new HttpsError("failed-precondition", "Penerimaan pesanan sedang dinonaktifkan.");
   if (paymentMethod === "cod" && settings.codEnabled === false) throw new HttpsError("failed-precondition", "COD sedang dinonaktifkan.");
   if (paymentMethod === "wallet" && settings.walletEnabled === false) throw new HttpsError("failed-precondition", "Pembayaran saldo sedang dinonaktifkan.");
