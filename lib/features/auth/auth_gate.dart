@@ -164,7 +164,7 @@ class _UserProfileGateState extends State<_UserProfileGate> with WidgetsBindingO
           case 'buyer':
           case 'customer':
           case null:
-            return const HomeScreen();
+            return const _MaintenanceAwareHome();
           default:
             return _AuthMessage(
               title: 'Role akun belum didukung',
@@ -173,6 +173,40 @@ class _UserProfileGateState extends State<_UserProfileGate> with WidgetsBindingO
               onRetry: _retry,
             );
         }
+      },
+    );
+  }
+}
+
+
+class _MaintenanceAwareHome extends StatelessWidget {
+  const _MaintenanceAwareHome();
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance.collection('app_config').doc('platform').snapshots(),
+      builder: (context, snapshot) {
+        final config = snapshot.data?.data() ?? <String, dynamic>{};
+        if (config['maintenanceMode'] == true) {
+          return Scaffold(
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(28),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.construction_rounded, size: 58),
+                  const SizedBox(height: 16),
+                  const Text('Flowa sedang pemeliharaan', style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Text((config['maintenanceMessage'] ?? 'Silakan coba kembali nanti.').toString(), textAlign: TextAlign.center),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.refresh), label: const Text('Memeriksa otomatis')),
+                ]),
+              ),
+            ),
+          );
+        }
+        return const HomeScreen();
       },
     );
   }
