@@ -53,11 +53,18 @@ class _UserProfileGateState extends State<_UserProfileGate> with WidgetsBindingO
   }
 
   Future<String> _loadRole() async {
-    // Akun admin ditentukan dari email Firebase Authentication, bukan field role Firestore.
-    final adminEmail = (widget.user.email ?? '').trim().toLowerCase();
-    if (adminEmail == 'flowa324@gmail.com' && widget.user.emailVerified) {
+    // Refresh profil Auth agar status verifikasi tidak memakai cache lama.
+    await widget.user.reload().timeout(const Duration(seconds: 15));
+    final currentUser = FirebaseAuth.instance.currentUser ?? widget.user;
+    final adminEmail = (currentUser.email ?? '').trim().toLowerCase();
+
+    // Jangan diam-diam mengarahkan email admin yang belum verified ke Home user.
+    if (adminEmail == 'flowa324@gmail.com') {
+      if (!currentUser.emailVerified) return 'admin_unverified';
+      // Perbarui token agar Firestore Rules menerima klaim email_verified terbaru.
+      await currentUser.getIdToken(true);
       try {
-        await ChatProfileService.syncCurrentUser(displayName: widget.user.displayName);
+        await ChatProfileService.syncCurrentUser(displayName: currentUser.displayName);
       } catch (_) {
         // Sinkronisasi profil chat tidak boleh menghalangi akses admin.
       }
@@ -135,6 +142,12 @@ class _UserProfileGateState extends State<_UserProfileGate> with WidgetsBindingO
         switch (snapshot.data) {
           case 'admin':
             return const AdminDashboard();
+          case 'admin_unverified':
+            return _AuthMessage(
+              title: 'Email admin belum terverifikasi',
+              message: 'Akun flowa324@gmail.com terdeteksi, tetapi Firebase belum menandai email sebagai terverifikasi. Verifikasi email di Firebase Authentication, lalu tekan Coba lagi.',
+              onRetry: _retry,
+            );
           case 'user':
           case 'buyer':
           case 'customer':
