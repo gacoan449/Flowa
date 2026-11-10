@@ -13,6 +13,7 @@ class MyOrdersScreen extends StatelessWidget {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
+        backgroundColor: Theme.of(context).extension<FlowaDesignTokens>()?.backgroundFor('orders', Theme.of(context).scaffoldBackgroundColor),
         appBar: AppBar(title: const Text('Pesanan Saya'), bottom: const TabBar(tabs: [
           Tab(text: 'Pembelian'), Tab(text: 'Penjualan'),
         ])),
@@ -149,7 +150,7 @@ class _OrdersList extends StatelessWidget {
                     if (status == 'completed' && config['returnsEnabled'] == true) {
                       actions.add(OutlinedButton(onPressed: () => _requestCase(context, doc.id, 'return_requested'), child: const Text('Ajukan retur')));
                     }
-                    if (!['cancelled','returned'].contains(status) && config['disputesEnabled'] == true) {
+                    if (['completed','shipped','processing'].contains(status) && config['disputesEnabled'] == true) {
                       actions.add(OutlinedButton(onPressed: () => _requestCase(context, doc.id, 'disputed'), child: const Text('Ajukan sengketa')));
                     }
                   }
