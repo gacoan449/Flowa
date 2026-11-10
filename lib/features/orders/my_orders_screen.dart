@@ -53,6 +53,41 @@ class _OrdersList extends StatelessWidget {
     }
   }
 
+  Future<void> _requestCase(BuildContext context, String id, String status) async {
+    final controller = TextEditingController();
+    final title = status == 'return_requested' ? 'Ajukan retur' : 'Ajukan sengketa';
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(title),
+        content: TextField(
+          controller: controller, autofocus: true, maxLines: 4, maxLength: 1000,
+          decoration: const InputDecoration(
+            labelText: 'Alasan pengajuan',
+            hintText: 'Jelaskan masalah pesanan minimal 10 karakter',
+            alignLabelWithHint: true,
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Kembali')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, controller.text.trim()), child: const Text('Kirim pengajuan')),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (reason == null) return;
+    if (reason.length < 10) {
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Alasan minimal 10 karakter.')));
+      return;
+    }
+    try {
+      await OrderService().updateStatus(orderId: id, status: status, reason: reason);
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$title berhasil dikirim.')));
+    } catch (e) {
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Pengajuan gagal: $e')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) => StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
     stream: FirebaseFirestore.instance.collection('orders').where(field, isEqualTo: uid).snapshots(),
@@ -90,6 +125,10 @@ class _OrdersList extends StatelessWidget {
                 Text('Alamat: ${data['deliveryAddress']}'),
               if ((data['note'] ?? '').toString().isNotEmpty)
                 Text('Catatan: ${data['note']}'),
+              if ((data['statusReason'] ?? '').toString().isNotEmpty)
+                Text('Catatan proses: ${data['statusReason']}'),
+              if ((data['refundStatus'] ?? '').toString() == 'manual_review_required')
+                const Text('Pengembalian dana COD perlu diselesaikan manual oleh penjual/admin.'),
               const SizedBox(height: 10),
               StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                 stream: FirebaseFirestore.instance.collection('app_config').doc('platform').snapshots(),
@@ -108,10 +147,10 @@ class _OrdersList extends StatelessWidget {
                       actions.add(TextButton(onPressed: () => _update(context, doc.id, 'cancelled'), child: const Text('Batalkan')));
                     }
                     if (status == 'completed' && config['returnsEnabled'] == true) {
-                      actions.add(OutlinedButton(onPressed: () => _update(context, doc.id, 'return_requested'), child: const Text('Ajukan retur')));
+                      actions.add(OutlinedButton(onPressed: () => _requestCase(context, doc.id, 'return_requested'), child: const Text('Ajukan retur')));
                     }
                     if (!['cancelled','returned'].contains(status) && config['disputesEnabled'] == true) {
-                      actions.add(OutlinedButton(onPressed: () => _update(context, doc.id, 'disputed'), child: const Text('Ajukan sengketa')));
+                      actions.add(OutlinedButton(onPressed: () => _requestCase(context, doc.id, 'disputed'), child: const Text('Ajukan sengketa')));
                     }
                   }
                   return Wrap(spacing: 8, runSpacing: 6, children: actions);
