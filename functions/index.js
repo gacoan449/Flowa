@@ -251,9 +251,10 @@ exports.updateMarketplaceOrderStatus = onCall(async (request) => {
       (status === "shipped" && current === "processing") ||
       (status === "completed" && current === "shipped")
     );
-    const buyerRequest = isBuyer && (
+    const caseReason = typeof reason === "string" ? reason.trim().slice(0, 1000) : "";
+    const buyerRequest = isBuyer && caseReason.length >= 10 && (
       (status === "return_requested" && settings.returnsEnabled === true && current === "completed") ||
-      (status === "disputed" && settings.disputesEnabled === true && !["cancelled", "returned"].includes(current))
+      (status === "disputed" && settings.disputesEnabled === true && ["completed", "shipped", "processing"].includes(current))
     );
     const adminAction = privileged && (
       status === "cancelled" || status === "returned" || status === "disputed" ||
@@ -288,12 +289,31 @@ exports.updateMarketplaceOrderStatus = onCall(async (request) => {
       });
     }
     const history = Array.isArray(order.statusHistory) ? order.statusHistory : [];
+    const now = admin.firestore.FieldValue.serverTimestamp();
+    const caseRef = db.collection("order_cases").doc(orderId);
+    if (status === "return_requested" || status === "disputed") {
+      tx.set(caseRef, {
+        orderId, buyerId: order.buyerId, sellerId: order.sellerId,
+        type: status === "return_requested" ? "return" : "dispute",
+        status: "open", reason: caseReason,
+        openedBy: auth.uid, openedAt: now, updatedAt: now,
+      }, { merge: true });
+    }
+    if (status === "returned" || (status === "completed" && current === "disputed")) {
+      tx.set(caseRef, {
+        status: status === "returned" ? "approved_return" : "resolved",
+        resolution: status === "returned" ? "refund_or_return" : "completed",
+        resolutionNote: typeof reason === "string" ? reason.slice(0, 1000) : "",
+        resolvedBy: auth.uid, resolvedAt: now, updatedAt: now,
+      }, { merge: true });
+    }
     tx.update(ref, {
-      status, statusReason: typeof reason === "string" ? reason.slice(0, 500) : "",
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      statusHistory: [...history, { status, by: auth.uid, at: new Date().toISOString() }],
+      status, statusReason: typeof reason === "string" ? reason.slice(0, 1000) : "",
+      updatedAt: now,
+      statusHistory: [...history, { status, by: auth.uid, at: new Date().toISOString(), reason: typeof reason === "string" ? reason.slice(0, 500) : "" }],
       ...(restoreStock ? { stockRestored: true } : {}),
       ...(refundWallet ? { refundProcessed: true, paymentStatus: "refunded" } : {}),
+      ...(status === "returned" && order.paymentMethod === "cod" ? { refundStatus: "manual_review_required" } : {}),
       ...(status === "cancelled" && order.paymentMethod === "cod" ? { paymentStatus: "cancelled" } : {}),
       ...(status === "completed" && order.paymentMethod === "cod" ? { paymentStatus: "collected" } : {}),
     });
