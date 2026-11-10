@@ -169,7 +169,7 @@ service cloud.firestore {
 
     match /app_config/{configId} {
       allow read: if true;
-      allow write: if hasPermission('system') || hasPermission('content');
+      allow write: if configId == 'platform'\n        ? hasPermission('system')\n        : (hasPermission('content') || hasPermission('system'));
     }
 
     // ==============================
