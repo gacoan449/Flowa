@@ -131,6 +131,40 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
     );
   }
 
+  Widget _followButton(String ownerId) {
+    if (ownerId.isEmpty || ownerId == _uid) return const SizedBox.shrink();
+    final ref = FirebaseFirestore.instance.collection('user_follows').doc('${_uid}_${ownerId}');
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: ref.snapshots(),
+      builder: (context, snapshot) {
+        final following = snapshot.data?.exists == true;
+        return TextButton(
+          onPressed: () async {
+            try {
+              if (following) {
+                await ref.delete();
+              } else {
+                await ref.set({
+                  'followerId': _uid,
+                  'followingId': ownerId,
+                  'createdAt': FieldValue.serverTimestamp(),
+                });
+              }
+            } catch (e) {
+              if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Tidak dapat mengubah pertemanan: $e')),
+              );
+            }
+          },
+          style: TextButton.styleFrom(visualDensity: VisualDensity.compact, padding: const EdgeInsets.symmetric(horizontal: 9)),
+          child: Text(following ? 'Mengikuti' : '+ Ikuti',
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800,
+              color: following ? const Color(0xFF78869A) : const Color(0xFF3267E9))),
+        );
+      },
+    );
+  }
+
   Future<void> _toggleLike(DocumentReference<Map<String, dynamic>> ref, bool liked) async {
     try {
       await ref.update({
@@ -373,6 +407,7 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
                           Text(name, style: const TextStyle(fontWeight: FontWeight.w800)),
                           Text(_dateLabel(data['createdAt']), style: const TextStyle(fontSize: 11, color: Color(0xFF8995A7))),
                         ])),
+                        _followButton((data['ownerId'] ?? '').toString()),
                         if (data['ownerId'] == _uid)
                           PopupMenuButton<String>(
                             onSelected: (value) async {
