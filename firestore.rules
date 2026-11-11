@@ -306,7 +306,7 @@ service cloud.firestore {
         // Untuk foto/audio, text boleh kosong selama mediaUrl tersedia.
         allow create: if isChatParticipant()
           && platformEnabled('chatEnabled')
-          && get(/databases/$(database)/documents/app_config/platform).data.get('maintenanceMode', false) == false
+          && maintenanceIsOff()
           && chatIsNotBlocked()
           && request.resource.data.senderId == request.auth.uid
           && request.resource.data.keys().hasOnly([
