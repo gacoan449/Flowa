@@ -13,6 +13,7 @@ import 'pages/app_design_studio_page.dart';
 import 'pages/orders_admin_page.dart';
 import 'pages/roles_admin_page.dart';
 import 'pages/system_logs_admin_page.dart';
+import 'pages/social_moderation_admin_page.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key, this.staffRole = 'admin'});
@@ -44,7 +45,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
       ],
       'Operasional Marketplace':[
         _AdminModule('Manajemen Pesanan','Pantau order, status, pembatalan, retur, dan sengketa',Icons.receipt_long_outlined,const OrdersAdminPage()),
-        _AdminModule('Iklan & Moderasi','Tinjau produk dan laporan pengguna',Icons.inventory_2,const ProductsAdminPage()),
+        _AdminModule('Iklan & Moderasi','Tinjau produk dan laporan marketplace',Icons.inventory_2,const ProductsAdminPage()),
+        _AdminModule('Moderasi Sosial','Tinjau laporan postingan dan konten komunitas',Icons.shield_outlined,const SocialModerationAdminPage()),
         _AdminModule('Pengguna','Cari dan kelola status akun',Icons.people_alt_outlined,const UsersAdminPage()),
       ],
       'Platform & Sistem':[
@@ -62,7 +64,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       groups.remove('Layanan & Analitik');
       groups.remove('Platform & Sistem');
       groups['Operasional Marketplace'] = groups['Operasional Marketplace']!
-          .where((m) => m.title == 'Iklan & Moderasi').toList();
+          .where((m) => m.title == 'Iklan & Moderasi' || m.title == 'Moderasi Sosial').toList();
     } else if (widget.staffRole == 'support') {
       groups.remove('Konten & Tampilan');
       groups.remove('Platform & Sistem');
