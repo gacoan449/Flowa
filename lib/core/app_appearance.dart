@@ -10,8 +10,10 @@ class FlowaDesignTokens extends ThemeExtension<FlowaDesignTokens> {
 
   @override
   FlowaDesignTokens copyWith({Map<String, Color>? screenBackgrounds, Map<String, String>? navigation}) =>
-      FlowaDesignTokens(screenBackgrounds: screenBackgrounds ?? this.screenBackgrounds,
-        navigation: navigation ?? this.navigation);
+      FlowaDesignTokens(
+        screenBackgrounds: screenBackgrounds ?? this.screenBackgrounds,
+        navigation: navigation ?? this.navigation,
+      );
 
   @override
   FlowaDesignTokens lerp(ThemeExtension<FlowaDesignTokens>? other, double t) {
@@ -21,29 +23,30 @@ class FlowaDesignTokens extends ThemeExtension<FlowaDesignTokens> {
 }
 
 class AppAppearance {
+  // Bright, premium blue system. Existing Firestore customization still overrides these values.
   static const defaults = <String, dynamic>{
     'primaryColor': 0xFF0866FF,
-    'accentColor': 0xFF00A8FF,
-    'scaffoldColor': 0xFFF6F8FC,
+    'accentColor': 0xFF18B6FF,
+    'scaffoldColor': 0xFFF4F8FF,
     'surfaceColor': 0xFFFFFFFF,
-    'textColor': 0xFF172033,
-    'cornerRadius': 18.0,
-    'buttonRadius': 14.0,
-    'iconSize': 22.0,
-    'buttonHeight': 48.0,
+    'textColor': 0xFF13233F,
+    'cornerRadius': 22.0,
+    'buttonRadius': 18.0,
+    'iconSize': 23.0,
+    'buttonHeight': 52.0,
     'screenBackgrounds': <String, int>{
-      'home': 0xFFF6F8FC,
-      'marketplace': 0xFFF6F8FC,
-      'chat': 0xFFF5F7FB,
-      'chatDetail': 0xFFFFFFFF,
-      'upload': 0xFFF5F7FB,
-      'profile': 0xFFF6F8FC,
-      'settings': 0xFFF6F8FC,
-      'favorites': 0xFFF6F8FC,
-      'orders': 0xFFF6F8FC,
-      'myListings': 0xFFF6F8FC,
-      'sellerStore': 0xFFF6F8FC,
-      'discover': 0xFFF6F8FC,
+      'home': 0xFFF4F8FF,
+      'marketplace': 0xFFF4F8FF,
+      'chat': 0xFFF3F7FD,
+      'chatDetail': 0xFFF8FAFF,
+      'upload': 0xFFF4F8FF,
+      'profile': 0xFFF4F8FF,
+      'settings': 0xFFF4F8FF,
+      'favorites': 0xFFF4F8FF,
+      'orders': 0xFFF4F8FF,
+      'myListings': 0xFFF4F8FF,
+      'sellerStore': 0xFFF4F8FF,
+      'discover': 0xFFF4F8FF,
     },
     'navigation': <String, dynamic>{
       'homeLabel': 'Beranda', 'homeIcon': 'home',
@@ -52,7 +55,7 @@ class AppAppearance {
       'profileLabel': 'Profil', 'profileIcon': 'person',
     },
     'buttonStyle': 'filled',
-    'cardElevation': 0.0,
+    'cardElevation': 1.0,
     'compactDensity': false,
     'updatedAt': null,
   };
@@ -87,91 +90,202 @@ class AppAppearance {
     final config = <String, dynamic>{...defaults, ...raw};
     final brightness = dark ? Brightness.dark : Brightness.light;
     final primary = color(config['primaryColor'], 0xFF0866FF);
-    final accent = color(config['accentColor'], 0xFF00A8FF);
+    final accent = color(config['accentColor'], 0xFF18B6FF);
     final configuredSurface = color(config['surfaceColor'], 0xFFFFFFFF);
-    final configuredScaffold = color(config['scaffoldColor'], 0xFFF6F8FC);
-    final configuredText = color(config['textColor'], 0xFF172033);
+    final configuredScaffold = color(config['scaffoldColor'], 0xFFF4F8FF);
+    final configuredText = color(config['textColor'], 0xFF13233F);
     final surface = dark && configuredSurface.value == 0xFFFFFFFF
-        ? const Color(0xFF1B2638) : configuredSurface;
-    final scaffold = dark && configuredScaffold.value == 0xFFF6F8FC
-        ? const Color(0xFF101827) : configuredScaffold;
-    final text = dark && configuredText.value == 0xFF172033
-        ? const Color(0xFFF4F7FC) : configuredText;
-    final radius = number(config['cornerRadius'], 18).clamp(0.0, 36.0).toDouble();
-    final buttonRadius = number(config['buttonRadius'], 14).clamp(0.0, 36.0).toDouble();
-    final iconSize = number(config['iconSize'], 22).clamp(14.0, 36.0).toDouble();
-    final buttonHeight = number(config['buttonHeight'], 48).clamp(36.0, 72.0).toDouble();
-    final scheme = ColorScheme.fromSeed(seedColor: primary, brightness: brightness,
-      surface: surface, primary: primary, secondary: accent);
+        ? const Color(0xFF172235) : configuredSurface;
+    final scaffold = dark && configuredScaffold.value == 0xFFF4F8FF
+        ? const Color(0xFF0E1624) : configuredScaffold;
+    final text = dark && configuredText.value == 0xFF13233F
+        ? const Color(0xFFF5F8FF) : configuredText;
+    final radius = number(config['cornerRadius'], 22).clamp(12.0, 36.0).toDouble();
+    final buttonRadius = number(config['buttonRadius'], 18).clamp(12.0, 36.0).toDouble();
+    final iconSize = number(config['iconSize'], 23).clamp(18.0, 36.0).toDouble();
+    final buttonHeight = number(config['buttonHeight'], 52).clamp(44.0, 72.0).toDouble();
+
+    final scheme = ColorScheme.fromSeed(
+      seedColor: primary,
+      brightness: brightness,
+      surface: surface,
+      primary: primary,
+      secondary: accent,
+    );
     final rawBackgrounds = config['screenBackgrounds'] is Map
-        ? Map<String, dynamic>.from(config['screenBackgrounds'] as Map) : <String, dynamic>{};
+        ? Map<String, dynamic>.from(config['screenBackgrounds'] as Map)
+        : <String, dynamic>{};
     final screenBackgrounds = <String, Color>{
       for (final entry in rawBackgrounds.entries)
         entry.key: color(entry.value, scaffold.value),
     };
     final rawNavigation = config['navigation'] is Map
-        ? Map<String, dynamic>.from(config['navigation'] as Map) : <String, dynamic>{};
+        ? Map<String, dynamic>.from(config['navigation'] as Map)
+        : <String, dynamic>{};
     final navigation = <String, String>{
       for (final entry in rawNavigation.entries) entry.key: entry.value.toString(),
     };
-    final buttonShape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius));
+
+    final buttonShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(buttonRadius),
+    );
     final buttonBackground = config['buttonStyle'] == 'soft'
         ? scheme.secondaryContainer
         : (config['buttonStyle'] == 'outlined' ? surface : primary);
     final buttonForeground = config['buttonStyle'] == 'soft'
         ? scheme.onSecondaryContainer
         : (config['buttonStyle'] == 'outlined' ? primary : scheme.onPrimary);
+
+    final baseText = ThemeData(brightness: brightness).textTheme.apply(
+      bodyColor: text,
+      displayColor: text,
+    );
+
     return ThemeData(
       useMaterial3: true,
       extensions: <ThemeExtension<dynamic>>[
-        FlowaDesignTokens(screenBackgrounds: screenBackgrounds, navigation: navigation),
+        FlowaDesignTokens(
+          screenBackgrounds: screenBackgrounds,
+          navigation: navigation,
+        ),
       ],
       brightness: brightness,
       colorScheme: scheme,
-      textTheme: ThemeData(brightness: brightness).textTheme.apply(bodyColor: text, displayColor: text),
+      textTheme: baseText.copyWith(
+        titleLarge: baseText.titleLarge?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.4),
+        titleMedium: baseText.titleMedium?.copyWith(fontWeight: FontWeight.w750),
+        bodyLarge: baseText.bodyLarge?.copyWith(height: 1.35),
+      ),
       scaffoldBackgroundColor: scaffold,
       canvasColor: scaffold,
       iconTheme: IconThemeData(size: iconSize, color: scheme.onSurfaceVariant),
-      appBarTheme: AppBarTheme(backgroundColor: scaffold, foregroundColor: text,
-        elevation: 0, centerTitle: false, iconTheme: IconThemeData(size: iconSize, color: text)),
+      appBarTheme: AppBarTheme(
+        backgroundColor: scaffold,
+        foregroundColor: text,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: false,
+        titleTextStyle: baseText.titleLarge?.copyWith(color: text, fontWeight: FontWeight.w800),
+        iconTheme: IconThemeData(size: iconSize, color: text),
+      ),
       cardTheme: CardThemeData(
-        elevation: number(config['cardElevation'], 0),
+        elevation: number(config['cardElevation'], 1),
+        shadowColor: primary.withValues(alpha: .10),
+        surfaceTintColor: Colors.transparent,
         color: surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radius),
+          side: BorderSide(color: scheme.outlineVariant.withValues(alpha: .45)),
+        ),
         margin: const EdgeInsets.all(4),
       ),
-      filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(
-        backgroundColor: buttonBackground, foregroundColor: buttonForeground,
-        side: config['buttonStyle'] == 'outlined' ? BorderSide(color: primary) : BorderSide.none,
-        minimumSize: Size(0, buttonHeight), shape: buttonShape,
-        textStyle: const TextStyle(fontWeight: FontWeight.w700))),
-      elevatedButtonTheme: ElevatedButtonThemeData(style: ElevatedButton.styleFrom(
-        backgroundColor: buttonBackground, foregroundColor: buttonForeground,
-        minimumSize: Size(0, buttonHeight), shape: buttonShape)),
-      outlinedButtonTheme: OutlinedButtonThemeData(style: OutlinedButton.styleFrom(
-        backgroundColor: config['buttonStyle'] == 'soft' ? scheme.secondaryContainer : Colors.transparent,
-        foregroundColor: buttonForeground,
-        side: BorderSide(color: config['buttonStyle'] == 'outlined' ? primary : scheme.outlineVariant),
-        minimumSize: Size(0, buttonHeight), shape: buttonShape)),
-      textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(
-        foregroundColor: primary, shape: buttonShape)),
-      iconButtonTheme: IconButtonThemeData(style: IconButton.styleFrom(
-        foregroundColor: primary, iconSize: iconSize, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius)))),
+      dividerTheme: DividerThemeData(
+        color: scheme.outlineVariant.withValues(alpha: .55),
+        thickness: .8,
+        space: 1,
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: buttonBackground,
+          foregroundColor: buttonForeground,
+          elevation: 2,
+          shadowColor: primary.withValues(alpha: .28),
+          minimumSize: Size(0, buttonHeight),
+          padding: const EdgeInsets.symmetric(horizontal: 22),
+          shape: buttonShape,
+          textStyle: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: .1),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: buttonBackground,
+          foregroundColor: buttonForeground,
+          elevation: 2,
+          shadowColor: primary.withValues(alpha: .25),
+          minimumSize: Size(0, buttonHeight),
+          padding: const EdgeInsets.symmetric(horizontal: 22),
+          shape: buttonShape,
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          backgroundColor: config['buttonStyle'] == 'soft'
+              ? scheme.secondaryContainer.withValues(alpha: .55)
+              : surface,
+          foregroundColor: primary,
+          side: BorderSide(color: primary.withValues(alpha: .35)),
+          minimumSize: Size(0, buttonHeight),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          shape: buttonShape,
+          textStyle: const TextStyle(fontWeight: FontWeight.w750),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: primary,
+          shape: buttonShape,
+          textStyle: const TextStyle(fontWeight: FontWeight.w750),
+        ),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          foregroundColor: primary,
+          iconSize: iconSize,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(buttonRadius),
+          ),
+        ),
+      ),
       inputDecorationTheme: InputDecorationTheme(
-        filled: true, fillColor: surface,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(radius),
-          borderSide: BorderSide(color: scheme.outlineVariant)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(radius),
-          borderSide: BorderSide(color: scheme.outlineVariant)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(radius),
-          borderSide: BorderSide(color: primary, width: 1.6)),
+        filled: true,
+        fillColor: surface,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        hintStyle: TextStyle(color: scheme.onSurfaceVariant.withValues(alpha: .75)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(radius),
+          borderSide: BorderSide(color: scheme.outlineVariant.withValues(alpha: .55)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(radius),
+          borderSide: BorderSide(color: scheme.outlineVariant.withValues(alpha: .55)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(radius),
+          borderSide: BorderSide(color: primary, width: 1.8),
+        ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: surface, indicatorColor: primary.withValues(alpha: .13),
+        height: 74,
+        backgroundColor: surface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 8,
+        shadowColor: primary.withValues(alpha: .10),
+        indicatorColor: primary.withValues(alpha: .13),
+        indicatorShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
+        iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(
+          color: states.contains(WidgetState.selected)
+              ? primary
+              : scheme.onSurfaceVariant,
+        )),
         labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
-          fontWeight: states.contains(WidgetState.selected) ? FontWeight.w800 : FontWeight.w500,
-          fontSize: 11, color: text))),
-      chipTheme: ChipThemeData(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius))),
+          fontWeight: states.contains(WidgetState.selected)
+              ? FontWeight.w800
+              : FontWeight.w600,
+          fontSize: 11,
+          color: states.contains(WidgetState.selected)
+              ? primary
+              : scheme.onSurfaceVariant,
+        )),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: surface,
+        selectedColor: primary.withValues(alpha: .12),
+        side: BorderSide(color: scheme.outlineVariant.withValues(alpha: .55)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius)),
+        labelStyle: const TextStyle(fontWeight: FontWeight.w650),
+      ),
     );
   }
 }
