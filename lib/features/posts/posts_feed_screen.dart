@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 
 class PostsFeedScreen extends StatefulWidget {
   const PostsFeedScreen({super.key});
@@ -118,10 +119,7 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
     final author = (data['ownerName'] ?? 'Pengguna Flowa').toString();
     final body = (data['text'] ?? '').toString();
     final text = "$author di Flowa:\n\n$body\n\nLihat di Flowa";
-    await Clipboard.setData(ClipboardData(text: text));
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Isi postingan disalin. Kamu bisa tempel untuk membagikannya.')),
-    );
+    await Share.share(text, subject: 'Postingan Flowa');
   }
 
   void _showComments(String postId) {
@@ -157,7 +155,7 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
                       contentPadding: EdgeInsets.zero,
                       leading: CircleAvatar(
                         backgroundColor: const Color(0xFFEAF0FF),
-                        child: Text((data['name'] ?? 'P').toString().characters.first.toUpperCase()),
+                        child: Text((data['name'] ?? 'P').toString().substring(0, 1).toUpperCase()),
                       ),
                       title: Text((data['name'] ?? 'Pengguna').toString(),
                         style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
