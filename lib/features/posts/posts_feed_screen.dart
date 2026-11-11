@@ -379,6 +379,10 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
         title: const Text('Postingan', style: TextStyle(fontWeight: FontWeight.w800)),
         backgroundColor: const Color(0xFFF5F7FB),
         surfaceTintColor: Colors.transparent,
+        actions: [
+          IconButton(tooltip: 'Cari orang & postingan', onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FlowaSearchScreen())), icon: const Icon(Icons.search_rounded)),
+          IconButton(tooltip: 'Aktivitas', onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())), icon: const Icon(Icons.notifications_none_rounded)),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showComposer,
@@ -474,8 +478,6 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
                                   title: const Text('Hapus postingan?'),
                                   content: const Text('Postingan ini akan dihapus.'),
                                   actions: [
-          IconButton(tooltip:'Cari orang & postingan',onPressed:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const FlowaSearchScreen())),icon:const Icon(Icons.search_rounded)),
-          IconButton(tooltip:'Aktivitas',onPressed:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const NotificationsScreen())),icon:const Icon(Icons.notifications_none_rounded)),
                                     TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
                                     FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Hapus')),
                                   ],
