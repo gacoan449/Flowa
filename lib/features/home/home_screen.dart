@@ -5,6 +5,7 @@ import '../products/product_upload_screen.dart';
 import '../marketplace/marketplace_screen.dart';
 import '../marketplace/marketplace_search_screen.dart';
 import '../chat/chat_inbox_screen.dart';
+import '../posts/posts_feed_screen.dart';
 import '../profile/profile_screen.dart';
 import 'home_config_service.dart';
 
@@ -251,6 +252,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   NavigationDestination(
                     icon: Icon(AppAppearance.icon(design?.navigation['chatIcon'] ?? 'chat_outline')),
                     label: design?.navigation['chatLabel'] ?? 'Chat'),
+                NavigationDestination(
+                  icon: const Icon(Icons.dynamic_feed_outlined),
+                  selectedIcon: const Icon(Icons.dynamic_feed_rounded),
+                  label: 'Postingan'),
                 if (platform['uploadEnabled'] != false && platform['adsEnabled'] != false)
                   NavigationDestination(
                     icon: Icon(AppAppearance.icon(design?.navigation['uploadIcon'] ?? 'add_outline')),
@@ -263,6 +268,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 () {},
                 if (platform['chatEnabled'] != false)
                   () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatInboxScreen())),
+                () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PostsFeedScreen())),
                 if (platform['uploadEnabled'] != false && platform['adsEnabled'] != false)
                   () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProductUploadScreen())),
                 () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
