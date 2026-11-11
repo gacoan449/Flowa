@@ -153,7 +153,7 @@ class AppAppearance {
       colorScheme: scheme,
       textTheme: baseText.copyWith(
         titleLarge: baseText.titleLarge?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.4),
-        titleMedium: baseText.titleMedium?.copyWith(fontWeight: FontWeight.w750),
+        titleMedium: baseText.titleMedium?.copyWith(fontWeight: FontWeight.w700),
         bodyLarge: baseText.bodyLarge?.copyWith(height: 1.35),
       ),
       scaffoldBackgroundColor: scaffold,
@@ -217,14 +217,14 @@ class AppAppearance {
           minimumSize: Size(0, buttonHeight),
           padding: const EdgeInsets.symmetric(horizontal: 20),
           shape: buttonShape,
-          textStyle: const TextStyle(fontWeight: FontWeight.w750),
+          textStyle: TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: primary,
           shape: buttonShape,
-          textStyle: const TextStyle(fontWeight: FontWeight.w750),
+          textStyle: TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
       iconButtonTheme: IconButtonThemeData(
@@ -284,7 +284,7 @@ class AppAppearance {
         selectedColor: primary.withValues(alpha: .12),
         side: BorderSide(color: scheme.outlineVariant.withValues(alpha: .55)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius)),
-        labelStyle: const TextStyle(fontWeight: FontWeight.w650),
+        labelStyle: TextStyle(fontWeight: FontWeight.w600),
       ),
     );
   }
