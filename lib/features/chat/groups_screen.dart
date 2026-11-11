@@ -21,7 +21,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
     super.dispose();
   }
 
-  Future<void> _createGroup() async {
+  Future<void> _createGroup(BuildContext sheetContext) async {
     final name = _name.text.trim();
     final description = _description.text.trim();
     if (name.length < 3 || _creating) return;
@@ -37,7 +37,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
         'updatedAt': FieldValue.serverTimestamp(),
       });
       if (!mounted) return;
-      Navigator.pop(context);
+      Navigator.pop(sheetContext);
       Navigator.push(context, MaterialPageRoute(builder: (_) => GroupChatScreen(groupId: ref.id, groupName: name)));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Grup gagal dibuat: $e')));
@@ -61,7 +61,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
           TextField(controller: _description, maxLength: 240, maxLines: 3, decoration: const InputDecoration(labelText: 'Deskripsi grup', border: OutlineInputBorder())),
           const SizedBox(height: 12),
           SizedBox(width: double.infinity, child: FilledButton.icon(
-            onPressed: _creating ? null : () async { refresh(() {}); await _createGroup(); if (mounted) refresh(() {}); },
+            onPressed: _creating ? null : () async { refresh(() {}); await _createGroup(sheetContext); if (mounted) refresh(() {}); },
             icon: _creating ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.group_add_rounded),
             label: Text(_creating ? 'Membuat...' : 'Buat grup'),
           )),
