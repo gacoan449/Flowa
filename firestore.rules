@@ -385,6 +385,96 @@ service cloud.firestore {
     }
 
     // ==============================
+    // GRUP KOMUNITAS & PESAN GRUP
+    // ==============================
+
+    match /groups/{groupId} {
+      function isGroupMember() {
+        return signedIn() && request.auth.uid in resource.data.get('members', []);
+      }
+
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly([
+          'name', 'description', 'ownerId', 'members',
+          'memberCount', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 3
+        && request.resource.data.name.size() <= 50
+        && request.resource.data.description is string
+        && request.resource.data.description.size() <= 240
+        && request.resource.data.members == [request.auth.uid]
+        && request.resource.data.memberCount == 1;
+
+      allow update: if signedIn()
+        && (
+          (
+            resource.data.ownerId == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'name', 'description', 'updatedAt'
+            ])
+            && request.resource.data.name is string
+            && request.resource.data.name.size() >= 3
+            && request.resource.data.name.size() <= 50
+            && request.resource.data.description is string
+            && request.resource.data.description.size() <= 240
+          )
+          || (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'members', 'memberCount'
+            ])
+            && request.resource.data.members is list
+            && request.resource.data.memberCount == request.resource.data.members.size()
+            && request.resource.data.memberCount <= 5000
+            && (
+              request.resource.data.members.toSet()
+                .difference(resource.data.members.toSet()).hasOnly([request.auth.uid])
+              || resource.data.members.toSet()
+                .difference(request.resource.data.members.toSet()).hasOnly([request.auth.uid])
+            )
+          )
+          || (
+            isGroupMember()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'lastMessage', 'lastMessageAt'
+            ])
+            && request.resource.data.lastMessage is string
+            && request.resource.data.lastMessage.size() <= 500
+          )
+        );
+
+      allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
+
+      match /messages/{messageId} {
+        function parentGroup() {
+          return get(/databases/$(database)/documents/groups/$(groupId)).data;
+        }
+
+        function memberCanRead() {
+          return signedIn() && request.auth.uid in parentGroup().members;
+        }
+
+        allow read: if memberCanRead();
+
+        allow create: if memberCanRead()
+          && request.resource.data.keys().hasOnly([
+            'senderId', 'senderName', 'text', 'createdAt'
+          ])
+          && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.senderName is string
+          && request.resource.data.senderName.size() <= 80
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 2000;
+
+        allow update, delete: if false;
+      }
+    }
+
+    // ==============================
     // KOMUNITAS / POSTINGAN
     // ==============================
 
