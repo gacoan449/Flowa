@@ -311,9 +311,9 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
     final input=TextEditingController();
     final value=await showDialog<String>(context:context,builder:(ctx)=>AlertDialog(
       title:Text('Balas $recipientName'),
-      content:TextField(controller:input autofocus:true maxLines:4 maxLength:1000,decoration:const InputDecoration(hintText:'Tulis balasan...')),
+      content:TextField(controller:input, autofocus:true, maxLines:4 maxLength:1000,decoration:const InputDecoration(hintText:'Tulis balasan...')),
       actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('Batal')),
-        FilledButton(onPressed:()=>Navigator.pop(ctx,input.text.trim()),child:const Text('Kirim')],
+        FilledButton(onPressed:()=>Navigator.pop(ctx,input.text.trim()),child:const Text('Kirim'))],
     ));
     input.dispose();
     if(value==null||value.isEmpty)return;
