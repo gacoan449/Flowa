@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../core/services/cloudinary_service.dart';
 
 class PostsFeedScreen extends StatefulWidget {
   const PostsFeedScreen({super.key});
@@ -13,6 +16,9 @@ class PostsFeedScreen extends StatefulWidget {
 class _PostsFeedScreenState extends State<PostsFeedScreen> {
   final _composer = TextEditingController();
   bool _publishing = false;
+  List<XFile> _selectedImages = [];
+  String _feedMode = 'forYou';
+  final ImagePicker _picker = ImagePicker();
 
   String get _uid => FirebaseAuth.instance.currentUser!.uid;
   String get _name {
@@ -30,18 +36,26 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
 
   Future<void> _createPost() async {
     final text = _composer.text.trim();
-    if (text.isEmpty || _publishing) return;
+    if ((text.isEmpty && _selectedImages.isEmpty) || _publishing) return;
     setState(() => _publishing = true);
     try {
+      final imageUrls = <String>[];
+      for (final image in _selectedImages.take(4)) {
+        imageUrls.add(await CloudinaryService.uploadImage(File(image.path), folder: 'flowa/posts'));
+      }
       await FirebaseFirestore.instance.collection('posts').add({
         'ownerId': _uid,
         'ownerName': _name,
         'ownerPhoto': FirebaseAuth.instance.currentUser?.photoURL ?? '',
         'text': text,
+        'imageUrls': imageUrls,
         'likes': <String>[],
+        'commentCount': 0,
+        'shareCount': 0,
         'createdAt': FieldValue.serverTimestamp(),
       });
       _composer.clear();
+      _selectedImages = [];
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -59,8 +73,19 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
     }
   }
 
+
+  Future<void> _pickPostImages() async {
+    try {
+      final images = await _picker.pickMultiImage(imageQuality: 82, maxWidth: 1800);
+      if (mounted && images.isNotEmpty) setState(() => _selectedImages = images.take(4).toList());
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Foto gagal dipilih: $e')));
+    }
+  }
+
   void _showComposer() {
     _composer.clear();
+    _selectedImages = [];
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -83,6 +108,11 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
                 fillColor: const Color(0xFFF3F6FB),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
               ),
+            ),
+            TextButton.icon(
+              onPressed: _publishing ? null : () async { await _pickPostImages(); refresh(() {}); },
+              icon: const Icon(Icons.photo_library_outlined),
+              label: Text('Tambah foto (${_selectedImages.length}/4)'),
             ),
             const SizedBox(height: 8),
             SizedBox(width: double.infinity, child: FilledButton.icon(
