@@ -45,7 +45,7 @@ class NotificationService {
   void _listenToActivity(String uid) {
     var firstSnapshot = true;
     _activitySubscription = FirebaseFirestore.instance.collection('notifications')
-        .where('recipientId', isEqualTo: uid).limit(30).snapshots().listen((snapshot) {
+        .where('recipientId', isEqualTo: uid).snapshots().listen((snapshot) {
       if (firstSnapshot) {
         firstSnapshot = false;
         return;
