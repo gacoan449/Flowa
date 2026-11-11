@@ -6,6 +6,7 @@ import '../../core/app_appearance.dart';
 import 'chat_profile_service.dart';
 import 'chat_screen.dart';
 import 'discover_users_screen.dart';
+import 'groups_screen.dart';
 
 class ChatInboxScreen extends StatefulWidget {
   const ChatInboxScreen({super.key});
@@ -48,6 +49,9 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
         elevation: 0, titleSpacing: 22,
         title: const Text('Pesan', style: TextStyle(fontSize: 27, fontWeight: FontWeight.w800, letterSpacing: -0.7)),
         actions: [
+          IconButton(tooltip: 'Grup Flowa', onPressed: () => Navigator.push(context,
+            MaterialPageRoute(builder: (_) => const GroupsScreen())),
+            icon: const Icon(Icons.groups_rounded, color: Color(0xFF3267E9))),
           IconButton(tooltip: 'Temukan pengguna', onPressed: () => Navigator.push(context,
             MaterialPageRoute(builder: (_) => const DiscoverUsersScreen())),
             icon: const Icon(Icons.person_search_rounded, color: Color(0xFF3267E9))),
@@ -98,6 +102,30 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
                       style: TextStyle(fontSize: 11, color: Color(0xFF647A9E))),
                   ])),
                   Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Color(0xFF3267E9)),
+                ]),
+              ),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
+          child: Material(
+            color: const Color(0xFFEAF8F2),
+            borderRadius: BorderRadius.circular(16),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GroupsScreen())),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+                child: Row(children: [
+                  CircleAvatar(backgroundColor: Color(0xFFD5F1E3), child: Icon(Icons.groups_rounded, color: Color(0xFF16845B))),
+                  SizedBox(width: 12),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('Komunitas & Grup', style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF176B4D))),
+                    SizedBox(height: 2),
+                    Text('Buat grup, gabung komunitas, dan ngobrol bersama', style: TextStyle(fontSize: 11, color: Color(0xFF5D8B79))),
+                  ])),
+                  Icon(Icons.arrow_forward_ios_rounded, size: 15, color: Color(0xFF16845B)),
                 ]),
               ),
             ),
