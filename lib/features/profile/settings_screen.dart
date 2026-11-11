@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../core/app_appearance.dart';
 import '../chat/chat_profile_service.dart';
+import 'marketplace_info_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -93,8 +94,25 @@ class _SettingsScreenState extends State<SettingsScreen>{
         SwitchListTile(value:_showActivity,onChanged:(v)=>_pref('prefShowActivity',v),secondary:const Icon(Icons.visibility_outlined),title:const Text('Tampilkan aktivitas profil'),subtitle:const Text('Buat aktivitas profil terlihat oleh pengguna lain')),
       ]),
       _section('TENTANG FLOWA',[
-        const ListTile(leading:Icon(Icons.info_outline),title:Text('Tentang Flowa'),subtitle:Text('Marketplace lokal untuk terhubung dan bertumbuh')),
-        const ListTile(leading:Icon(Icons.privacy_tip_outlined),title:Text('Privasi & keamanan'),subtitle:Text('Jaga informasi akun dan kata sandi kamu')),
+        ListTile(
+          leading: const Icon(Icons.info_outline),
+          title: const Text('Tentang Flowa & Aturan Marketplace'),
+          subtitle: const Text('Panduan pembeli, penjual, pesanan, retur, dan barang terlarang'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.push(context, MaterialPageRoute(
+            builder: (_) => const MarketplaceInfoScreen(showPrivacy: false),
+          )),
+        ),
+        const Divider(height: 1),
+        ListTile(
+          leading: const Icon(Icons.privacy_tip_outlined),
+          title: const Text('Privasi & keamanan'),
+          subtitle: const Text('Data akun, visibilitas profil, dan perlindungan akun'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.push(context, MaterialPageRoute(
+            builder: (_) => const MarketplaceInfoScreen(showPrivacy: true),
+          )),
+        ),
       ]),
     ]));
   }
