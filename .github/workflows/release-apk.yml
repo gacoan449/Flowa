@@ -231,7 +231,7 @@ jobs:
           if 'name="theme-color"' not in html:
               html = html.replace('<head>', '<head>\n  <meta name="theme-color" content="#1769e8">', 1)
           download = '''
-          <a id="flowa-apk-download" href="https://github.com/gacoan449/Flowa/releases/download/flowa-latest/app-release.apk" style="position:fixed;right:16px;bottom:18px;z-index:99999;background:#1769e8;color:white;padding:13px 18px;border-radius:28px;text-decoration:none;font:600 14px Arial;box-shadow:0 4px 16px #0003">⬇ Download APK</a>
+          <a id="flowa-apk-download" href="https://github.com/gacoan449/Flowa/releases/download/flowa-latest/app-release.apk" style="position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);width:calc(100% - 32px);max-width:420px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:10px;z-index:99999;background:linear-gradient(135deg,#1769e8,#0b4fc4);color:#fff;padding:18px 22px;border:2px solid rgba(255,255,255,.9);border-radius:18px;text-align:center;text-decoration:none;font:700 17px Arial,sans-serif;letter-spacing:.2px;box-shadow:0 8px 28px rgba(0,0,0,.32)">⬇️ DOWNLOAD APLIKASI FLOWA</a>
           '''
           if 'flowa-apk-download' not in html:
               html = html.replace('</body>', download + '\\n</body>')
