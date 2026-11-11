@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +19,21 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
   List<XFile> _selectedImages = [];
   String _feedMode = 'forYou';
   final ImagePicker _picker = ImagePicker();
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _followSubscription;
+  Set<String> _followedIds = {};
+
+  @override
+  void initState() {
+    super.initState();
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      _followSubscription = FirebaseFirestore.instance.collection('user_follows')
+          .where('followerId', isEqualTo: uid).snapshots().listen((snapshot) {
+        if (mounted) setState(() => _followedIds = snapshot.docs
+            .map((doc) => (doc.data()['followingId'] ?? '').toString()).toSet());
+      });
+    }
+  }
 
   String get _uid => FirebaseAuth.instance.currentUser!.uid;
   String get _name {
@@ -29,6 +45,7 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
 
   @override
   void dispose() {
+    _followSubscription?.cancel();
     _composer.dispose();
     super.dispose();
   }
@@ -229,7 +246,8 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
                 final likes = (data['likes'] as List?)?.length ?? 0;
                 final comments = (data['commentCount'] as num?)?.toDouble() ?? 0;
                 final images = (data['imageUrls'] as List?)?.length ?? 0;
-                final engagement = likes * 3.0 + comments * 4.0 + images * 0.5;
+                final followsBoost = _followedIds.contains(data['ownerId']) ? 6.0 : 0.0;
+                final engagement = likes * 3.0 + comments * 4.0 + images * 0.5 + followsBoost;
                 return (1.0 + engagement) / (1.0 + hours / 18.0);
               }
               docs.sort((a, b) => score(b).compareTo(score(a)));
