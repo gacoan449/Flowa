@@ -167,13 +167,39 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
               child: Align(alignment: Alignment.centerLeft,
                 child: Text('Komentar', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800))),
             ),
-            Expanded(child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+            Padding(
+          padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+          child: SegmentedButton<String>(
+            segments: const [
+              ButtonSegment(value: 'forYou', label: Text('Untuk Anda'), icon: Icon(Icons.auto_awesome_rounded)),
+              ButtonSegment(value: 'latest', label: Text('Terbaru'), icon: Icon(Icons.schedule_rounded)),
+            ],
+            selected: {_feedMode},
+            onSelectionChanged: (value) => setState(() => _feedMode = value.first),
+            showSelectedIcon: false,
+          ),
+        ),
+        Expanded(child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
               stream: FirebaseFirestore.instance.collection('posts').doc(postId)
                   .collection('comments').orderBy('createdAt').snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) return const Center(child: Text('Komentar belum dapat dimuat.'));
                 if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-                final docs = snapshot.data!.docs;
+                final docs = [...snapshot.data!.docs];
+            if (_feedMode == 'forYou') {
+              final now = DateTime.now();
+              double score(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+                final data = doc.data();
+                final stamp = data['createdAt'];
+                final hours = stamp is Timestamp ? now.difference(stamp.toDate()).inHours.toDouble() : 24.0;
+                final likes = (data['likes'] as List?)?.length ?? 0;
+                final comments = (data['commentCount'] as num?)?.toDouble() ?? 0;
+                final images = (data['imageUrls'] as List?)?.length ?? 0;
+                final engagement = likes * 3.0 + comments * 4.0 + images * 0.5;
+                return (1.0 + engagement) / (1.0 + hours / 18.0);
+              }
+              docs.sort((a, b) => score(b).compareTo(score(a)));
+            }
                 if (docs.isEmpty) return const Center(child: Text('Belum ada komentar. Jadilah yang pertama!'));
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -296,7 +322,7 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
         ),
         Expanded(child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
           stream: FirebaseFirestore.instance.collection('posts')
-              .orderBy('createdAt', descending: true).limit(60).snapshots(),
+              .orderBy('createdAt', descending: true).limit(80).snapshots(),
           builder: (context, snapshot) {
             if (snapshot.hasError) return const Center(
               child: Padding(padding: EdgeInsets.all(28),
@@ -365,8 +391,21 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
                           ),
                       ]),
                       const SizedBox(height: 13),
-                      SelectableText((data['text'] ?? '').toString(),
-                        style: const TextStyle(fontSize: 14, height: 1.45, color: Color(0xFF26344A))),
+                      if ((data['text'] ?? '').toString().isNotEmpty)
+                        SelectableText((data['text'] ?? '').toString(),
+                          style: const TextStyle(fontSize: 14, height: 1.45, color: Color(0xFF26344A))),
+                      if (data['imageUrls'] is List && (data['imageUrls'] as List).isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        ...((data['imageUrls'] as List).take(4).map((url) => Padding(
+                          padding: const EdgeInsets.only(bottom: 5),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(13),
+                            child: Image.network(url.toString(), width: double.infinity, fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const SizedBox(height: 90, child: Center(child: Icon(Icons.broken_image_outlined))),
+                            ),
+                          ),
+                        ))),
+                      ],
                       const SizedBox(height: 14),
                       const Divider(height: 1),
                       Row(children: [
