@@ -486,9 +486,9 @@ service cloud.firestore {
     // ==============================
 
     match /user_follows/{followId} {
-      allow read: if signedIn()
-        && (resource.data.followerId == request.auth.uid
-          || resource.data.followingId == request.auth.uid);
+      // Data follow hanya berisi dua UID; boleh dibaca pengguna login
+      // agar tombol Ikuti dapat memeriksa status dokumen yang belum ada.
+      allow read: if signedIn();
 
       allow create: if signedIn()
         && request.resource.data.keys().hasOnly(['followerId', 'followingId', 'createdAt'])
