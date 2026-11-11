@@ -73,6 +73,36 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
                 border: InputBorder.none, contentPadding: const EdgeInsets.symmetric(vertical: 16)),
           )),
         ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
+          child: Material(
+            color: const Color(0xFFEAF0FF),
+            borderRadius: BorderRadius.circular(16),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const DiscoverUsersScreen())),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 15, vertical: 14),
+                child: Row(children: [
+                  CircleAvatar(
+                    backgroundColor: Color(0xFFD5E3FF),
+                    child: Icon(Icons.person_search_rounded, color: Color(0xFF3267E9)),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('Cari teman & pengguna Flowa',
+                      style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF1B376D))),
+                    SizedBox(height: 3),
+                    Text('Temukan orang baru dan mulai percakapan',
+                      style: TextStyle(fontSize: 11, color: Color(0xFF647A9E))),
+                  ])),
+                  Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Color(0xFF3267E9)),
+                ]),
+              ),
+            ),
+          ),
+        ),
         const Padding(padding: EdgeInsets.symmetric(horizontal: 21), child: Row(children: [
           Text('Terbaru', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF17243A))),
           Spacer(), Icon(Icons.lock_outline_rounded, size: 13, color: Color(0xFF8C98AA)),
