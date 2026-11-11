@@ -22,7 +22,7 @@ class ProfileScreen extends StatelessWidget {
     final user = FirebaseAuth.instance.currentUser;
     return Scaffold(
       backgroundColor: Theme.of(context).extension<FlowaDesignTokens>()?.backgroundFor('profile', Theme.of(context).scaffoldBackgroundColor),
-      appBar: AppBar(title: const Text('Profil Saya', style: TextStyle(fontWeight: FontWeight.w900)), actions: [Padding(padding: const EdgeInsets.only(right: 8), child: IconButton.filledTonal(icon: const Icon(Icons.settings_rounded), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())))],),
+      appBar: AppBar(\n        title: const Text('Profil Saya', style: TextStyle(fontWeight: FontWeight.w900)),\n        actions: [\n          Padding(\n            padding: const EdgeInsets.only(right: 8),\n            child: IconButton.filledTonal(\n              icon: const Icon(Icons.settings_rounded),\n              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),\n            ),\n          ),\n        ],\n      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
         children: [
