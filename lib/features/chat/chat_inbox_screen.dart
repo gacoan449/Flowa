@@ -45,7 +45,7 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).extension<FlowaDesignTokens>()?.backgroundFor('chat', Theme.of(context).scaffoldBackgroundColor),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF5F7FB), surfaceTintColor: Colors.transparent,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor, surfaceTintColor: Colors.transparent,
         elevation: 0, titleSpacing: 22,
         title: const Text('Pesan', style: TextStyle(fontSize: 27, fontWeight: FontWeight.w800, letterSpacing: -0.7)),
         actions: [
@@ -62,7 +62,7 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
         Padding(
           padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
           child: Container(
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(17),
+            decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(22),
               boxShadow: [BoxShadow(color: const Color(0xFF15294B).withOpacity(.045), blurRadius: 18, offset: const Offset(0, 6))]),
             child: TextField(
               controller: _search,
@@ -80,10 +80,10 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
         Padding(
           padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
           child: Material(
-            color: const Color(0xFFEAF0FF),
-            borderRadius: BorderRadius.circular(16),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: .09),
+            borderRadius: BorderRadius.circular(20),
             child: InkWell(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
               onTap: () => Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const DiscoverUsersScreen())),
               child: const Padding(
@@ -111,9 +111,9 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
           padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
           child: Material(
             color: const Color(0xFFEAF8F2),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(20),
             child: InkWell(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GroupsScreen())),
               child: const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 15, vertical: 12),
@@ -186,7 +186,7 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 14),
                           child: Row(children: [
                             Stack(children: [
-                              CircleAvatar(radius: 27, backgroundColor: const Color(0xFFEAF0FF),
+                              CircleAvatar(radius: 27, backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: .09),
                                 backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
                                 child: photo.isEmpty ? const Icon(Icons.person_rounded, color: Color(0xFF477CF4), size: 29) : null),
                               if (online) Positioned(right: 0, bottom: 0, child: Container(
