@@ -22,9 +22,9 @@ class ProfileScreen extends StatelessWidget {
     final user = FirebaseAuth.instance.currentUser;
     return Scaffold(
       backgroundColor: Theme.of(context).extension<FlowaDesignTokens>()?.backgroundFor('profile', Theme.of(context).scaffoldBackgroundColor),
-      appBar: AppBar(title: const Text('Profil Saya'), actions: [IconButton(icon: const Icon(Icons.settings_outlined), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())))],),
+      appBar: AppBar(title: const Text('Profil Saya', style: TextStyle(fontWeight: FontWeight.w900)), actions: [Padding(padding: const EdgeInsets.only(right: 8), child: IconButton.filledTonal(icon: const Icon(Icons.settings_rounded), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())))],),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
         children: [
           StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
             stream: user == null ? null : ChatProfileService.watch(user.uid),
@@ -35,7 +35,7 @@ class ProfileScreen extends StatelessWidget {
               final photo = (profile['photoUrl'] ?? '').toString();
               return Column(children: [
                 Stack(alignment: Alignment.bottomRight, children: [
-                  CircleAvatar(radius: 42, backgroundColor: const Color(0xFFEAF0FF),
+                  CircleAvatar(radius: 48, backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: .10),
                     backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
                     child: photo.isEmpty ? const Icon(Icons.account_circle_rounded, size: 58, color: Color(0xFF7894C8)) : null),
                   Positioned(right: 0, bottom: 0, child: Material(
@@ -62,7 +62,7 @@ class ProfileScreen extends StatelessWidget {
               ]);
             },
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           _menu(context, Icons.receipt_long_outlined, 'Pesanan Saya',
               'Pantau pembelian dan pesanan dari pelanggan', const MyOrdersScreen()),
           _menu(context, Icons.inventory_2_outlined, 'Iklan Saya',
