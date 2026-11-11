@@ -73,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   boxShadow: [BoxShadow(color: const Color(0xFF12315F).withValues(alpha: .08), blurRadius: 30, offset: const Offset(0, 14))],
                 ),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                  Text('Masuk', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w850)),
+                  Text('Masuk', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
                   const SizedBox(height: 5),
                   const Text('Gunakan akun Flowa Anda untuk melanjutkan.', style: TextStyle(color: Color(0xFF7A879A))),
                   const SizedBox(height: 22),
