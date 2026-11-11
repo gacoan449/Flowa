@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/services/cloudinary_service.dart';
+import '../notifications/notifications_screen.dart';
+import '../search/flowa_search_screen.dart';
 
 class PostsFeedScreen extends StatefulWidget {
   const PostsFeedScreen({super.key});
@@ -56,7 +58,7 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
     setState(() => _publishing = true);
     try {
       final imageUrls = <String>[];
-      for (final image in _selectedImages.take(4)) {
+      for (final image in _selectedImages.take(20)) {
         imageUrls.add(await CloudinaryService.uploadImageBytes(await image.readAsBytes(), image.name, folder: 'flowa/posts'));
       }
       await FirebaseFirestore.instance.collection('posts').add({
@@ -93,7 +95,7 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
   Future<void> _pickPostImages() async {
     try {
       final images = await _picker.pickMultiImage(imageQuality: 82, maxWidth: 1800);
-      if (mounted && images.isNotEmpty) setState(() => _selectedImages = images.take(4).toList());
+      if (mounted && images.isNotEmpty) setState(() => _selectedImages = images.take(20).toList());
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Foto gagal dipilih: $e')));
     }
@@ -128,7 +130,7 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
             TextButton.icon(
               onPressed: _publishing ? null : () async { await _pickPostImages(); refresh(() {}); },
               icon: const Icon(Icons.photo_library_outlined),
-              label: Text('Tambah foto (${_selectedImages.length}/4)'),
+              label: Text('Tambah foto / album (${_selectedImages.length}/20)'),
             ),
             const SizedBox(height: 8),
             SizedBox(width: double.infinity, child: FilledButton.icon(
@@ -182,15 +184,52 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
     );
   }
 
-  Future<void> _toggleLike(DocumentReference<Map<String, dynamic>> ref, bool liked) async {
+  Future<void> _sendActivity(String recipientId, String type, {String? postId, String? commentId, String? text}) async {
+    if (recipientId.isEmpty || recipientId == _uid) return;
+    final user = FirebaseAuth.instance.currentUser;
+    await FirebaseFirestore.instance.collection('notifications').add({
+      'recipientId': recipientId, 'actorId': _uid,
+      'actorName': (user?.displayName ?? user?.email?.split('@').first ?? 'Pengguna').toString(),
+      'type': type, 'postId': postId ?? '', 'commentId': commentId ?? '',
+      'text': text ?? '', 'read': false, 'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> _toggleLike(DocumentReference<Map<String, dynamic>> ref, bool liked, String ownerId) async {
     try {
-      await ref.update({
-        'likes': liked ? FieldValue.arrayRemove([_uid]) : FieldValue.arrayUnion([_uid]),
-      });
+      final batch = FirebaseFirestore.instance.batch();
+      batch.update(ref, {'likes': liked ? FieldValue.arrayRemove([_uid]) : FieldValue.arrayUnion([_uid])});
+      if (!liked && ownerId != _uid) {
+        final user = FirebaseAuth.instance.currentUser;
+        batch.set(FirebaseFirestore.instance.collection('notifications').doc(), {
+          'recipientId': ownerId, 'actorId': _uid,
+          'actorName': (user?.displayName ?? user?.email?.split('@').first ?? 'Pengguna').toString(),
+          'type': 'like', 'postId': ref.id, 'commentId': '', 'text': 'Menyukai postinganmu',
+          'read': false, 'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+      await batch.commit();
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Like gagal disimpan: $e')),
-      );
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Like gagal disimpan: $e')));
+    }
+  }
+
+  Future<void> _reportPost(String postId, String ownerId) async {
+    final reason = await showDialog<String>(context: context, builder: (ctx) => SimpleDialog(
+      title: const Text('Laporkan postingan'),
+      children: ['Spam atau penipuan','Konten tidak pantas','Pelecehan atau ujaran kebencian','Informasi palsu','Lainnya']
+        .map((v)=>SimpleDialogOption(onPressed:()=>Navigator.pop(ctx,v),child:Text(v))).toList(),
+    ));
+    if (reason == null) return;
+    try {
+      await FirebaseFirestore.instance.collection('reports').add({
+        'reporterId': _uid, 'targetType': 'post', 'targetId': postId,
+        'targetUserId': ownerId, 'reason': reason, 'status': 'pending',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Laporan diterima untuk ditinjau.')));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('Laporan gagal dikirim: $e')));
     }
   }
 
@@ -202,119 +241,110 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
     await Share.share(text, subject: 'Postingan Flowa');
   }
 
-  void _showComments(String postId) {
+  void _showComments(String postId, String postOwnerId) {
     final input = TextEditingController();
     showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
+      context: context, isScrollControlled: true, showDragHandle: true,
       builder: (sheetContext) => Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
-        child: SizedBox(
-          height: MediaQuery.of(sheetContext).size.height * .72,
+        child: SizedBox(height: MediaQuery.of(sheetContext).size.height * .78,
           child: Column(children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(18, 4, 18, 12),
-              child: Align(alignment: Alignment.centerLeft,
-                child: Text('Komentar', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800))),
-            ),
-            Padding(
-          padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
-          child: SegmentedButton<String>(
-            segments: const [
-              ButtonSegment(value: 'forYou', label: Text('Untuk Anda'), icon: Icon(Icons.auto_awesome_rounded)),
-              ButtonSegment(value: 'latest', label: Text('Terbaru'), icon: Icon(Icons.schedule_rounded)),
-            ],
-            selected: {_feedMode},
-            onSelectionChanged: (value) => setState(() => _feedMode = value.first),
-            showSelectedIcon: false,
-          ),
-        ),
-        Expanded(child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream: FirebaseFirestore.instance.collection('posts').doc(postId)
-                  .collection('comments').orderBy('createdAt').snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) return const Center(child: Text('Komentar belum dapat dimuat.'));
-                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-                final docs = [...snapshot.data!.docs];
-            if (_feedMode == 'forYou') {
-              final now = DateTime.now();
-              double score(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
-                final data = doc.data();
-                final stamp = data['createdAt'];
-                final hours = stamp is Timestamp ? now.difference(stamp.toDate()).inHours.toDouble() : 24.0;
-                final likes = (data['likes'] as List?)?.length ?? 0;
-                final comments = (data['commentCount'] as num?)?.toDouble() ?? 0;
-                final images = (data['imageUrls'] as List?)?.length ?? 0;
-                final followsBoost = _followedIds.contains(data['ownerId']) ? 6.0 : 0.0;
-                final engagement = likes * 3.0 + comments * 4.0 + images * 0.5 + followsBoost;
-                return (1.0 + engagement) / (1.0 + hours / 18.0);
-              }
-              docs.sort((a, b) => score(b).compareTo(score(a)));
-            }
-                if (docs.isEmpty) return const Center(child: Text('Belum ada komentar. Jadilah yang pertama!'));
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: docs.length,
-                  itemBuilder: (context, index) {
-                    final data = docs[index].data();
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: CircleAvatar(
-                        backgroundColor: const Color(0xFFEAF0FF),
-                        child: Text((data['name'] ?? 'P').toString().substring(0, 1).toUpperCase()),
+            const Padding(padding: EdgeInsets.all(16), child: Align(alignment:Alignment.centerLeft,
+              child:Text('Komentar & balasan',style:TextStyle(fontSize:19,fontWeight:FontWeight.w800)))),
+            Expanded(child:StreamBuilder<QuerySnapshot<Map<String,dynamic>>>(
+              stream:FirebaseFirestore.instance.collection('posts').doc(postId).collection('comments')
+                .orderBy('createdAt').snapshots(),
+              builder:(context,snapshot){
+                if(snapshot.hasError)return const Center(child:Text('Komentar belum dapat dimuat.'));
+                if(!snapshot.hasData)return const Center(child:CircularProgressIndicator());
+                final docs=snapshot.data!.docs.where((d)=>(d.data()['parentId']??'').toString().isEmpty).toList();
+                if(docs.isEmpty)return const Center(child:Text('Belum ada komentar. Jadilah yang pertama!'));
+                return ListView.builder(padding:const EdgeInsets.symmetric(horizontal:14),itemCount:docs.length,
+                  itemBuilder:(context,index){
+                    final doc=docs[index];final data=doc.data();
+                    return Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+                      ListTile(contentPadding:EdgeInsets.zero,
+                        leading:CircleAvatar(child:Text(((data['name']??'P').toString().isNotEmpty?(data['name']??'P').toString()[0]:'P').toUpperCase())),
+                        title:Text((data['name']??'Pengguna').toString(),style:const TextStyle(fontWeight:FontWeight.w700,fontSize:13)),
+                        subtitle:Text((data['text']??'').toString()),
                       ),
-                      title: Text((data['name'] ?? 'Pengguna').toString(),
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                      subtitle: Text((data['text'] ?? '').toString()),
-                    );
-                  },
-                );
+                      Padding(padding:const EdgeInsets.only(left:54,bottom:6),child:Row(children:[
+                        TextButton(onPressed:()=>_replyToComment(postId,doc.id,(data['uid']??'').toString(),(data['name']??'Pengguna').toString()),
+                          child:const Text('Balas')),
+                        TextButton(onPressed:()=>_showReplies(postId,doc.id,(data['uid']??'').toString()),
+                          child:Text('Lihat balasan ${data['replyCount']??0}')),
+                        if((data['uid']??'')==_uid)TextButton(onPressed:()=>doc.reference.delete(),child:const Text('Hapus')),
+                      ])),
+                      const Divider(height:1),
+                    ]);
+                  });
               },
             )),
-            SafeArea(child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-              child: Row(children: [
-                Expanded(child: TextField(
-                  controller: input,
-                  minLines: 1,
-                  maxLines: 4,
-                  decoration: InputDecoration(
-                    hintText: 'Tulis komentar...',
-                    filled: true,
-                    fillColor: const Color(0xFFF2F5FA),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-                  ),
-                )),
-                IconButton.filled(
-                  onPressed: () async {
-                    final text = input.text.trim();
-                    if (text.isEmpty) return;
-                    try {
-                      final postRef = FirebaseFirestore.instance.collection('posts').doc(postId);
-                      final batch = FirebaseFirestore.instance.batch();
-                      batch.set(postRef.collection('comments').doc(), {
-                        'uid': _uid, 'name': _name, 'text': text,
-                        'createdAt': FieldValue.serverTimestamp(),
-                      });
-                      batch.update(postRef, {'commentCount': FieldValue.increment(1)});
-                      await batch.commit();
-                      input.clear();
-                    } catch (e) {
-                      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Komentar gagal dikirim: $e')),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.send_rounded),
-                ),
-              ]),
-            )),
+            SafeArea(child:Padding(padding:const EdgeInsets.fromLTRB(12,8,12,12),child:Row(children:[
+              Expanded(child:TextField(controller:input,minLines:1,maxLines:3,decoration:InputDecoration(
+                hintText:'Tulis komentar...',filled:true,fillColor:const Color(0xFFF2F5FA),
+                border:OutlineInputBorder(borderRadius:BorderRadius.circular(24),borderSide:BorderSide.none)))),
+              IconButton.filled(onPressed:()async{
+                final value=input.text.trim();if(value.isEmpty)return;
+                final post=FirebaseFirestore.instance.collection('posts').doc(postId);
+                final comment=post.collection('comments').doc();
+                final batch=FirebaseFirestore.instance.batch();
+                batch.set(comment,{'uid':_uid,'name':_name,'text':value,'parentId':'','replyCount':0,'createdAt':FieldValue.serverTimestamp()});
+                batch.update(post,{'commentCount':FieldValue.increment(1)});
+                if(postOwnerId!=_uid){
+                  final user=FirebaseAuth.instance.currentUser;
+                  batch.set(FirebaseFirestore.instance.collection('notifications').doc(),{
+                    'recipientId':postOwnerId,'actorId':_uid,'actorName':user?.displayName??_name,
+                    'type':'comment','postId':postId,'commentId':comment.id,'text':value,
+                    'read':false,'createdAt':FieldValue.serverTimestamp()});
+                }
+                try{await batch.commit();input.clear();}catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('Komentar gagal: $e')));}
+              },icon:const Icon(Icons.send_rounded)),
+            ]))),
           ]),
         ),
       ),
     ).whenComplete(input.dispose);
+  }
+
+  Future<void> _replyToComment(String postId,String commentId,String recipientId,String recipientName) async {
+    final input=TextEditingController();
+    final value=await showDialog<String>(context:context,builder:(ctx)=>AlertDialog(
+      title:Text('Balas $recipientName'),
+      content:TextField(controller:input autofocus:true maxLines:4 maxLength:1000,decoration:const InputDecoration(hintText:'Tulis balasan...')),
+      actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('Batal')),
+        FilledButton(onPressed:()=>Navigator.pop(ctx,input.text.trim()),child:const Text('Kirim')],
+    ));
+    input.dispose();
+    if(value==null||value.isEmpty)return;
+    final post=FirebaseFirestore.instance.collection('posts').doc(postId);
+    final parent=post.collection('comments').doc(commentId);
+    final reply=parent.collection('replies').doc();
+    final batch=FirebaseFirestore.instance.batch();
+    batch.set(reply,{'uid':_uid,'name':_name,'text':value,'createdAt':FieldValue.serverTimestamp()});
+    batch.update(parent,{'replyCount':FieldValue.increment(1)});
+    if(recipientId.isNotEmpty&&recipientId!=_uid){
+      batch.set(FirebaseFirestore.instance.collection('notifications').doc(),{
+        'recipientId':recipientId,'actorId':_uid,'actorName':_name,'type':'reply',
+        'postId':postId,'commentId':commentId,'text':value,'read':false,'createdAt':FieldValue.serverTimestamp()});
+    }
+    await batch.commit();
+  }
+
+  void _showReplies(String postId,String commentId,String commentOwner) {
+    showModalBottomSheet<void>(context:context,showDragHandle:true,builder:(ctx)=>SizedBox(height:360,
+      child:StreamBuilder<QuerySnapshot<Map<String,dynamic>>>(
+        stream:FirebaseFirestore.instance.collection('posts').doc(postId).collection('comments').doc(commentId)
+          .collection('replies').orderBy('createdAt').snapshots(),
+        builder:(context,snap){
+          if(!snap.hasData)return const Center(child:CircularProgressIndicator());
+          final docs=snap.data!.docs;
+          if(docs.isEmpty)return const Center(child:Text('Belum ada balasan.'));
+          return ListView(children:docs.map((d){final x=d.data();return ListTile(
+            leading:const Icon(Icons.subdirectory_arrow_right),title:Text((x['name']??'Pengguna').toString()),
+            subtitle:Text((x['text']??'').toString()));}).toList());
+        },
+      )));
   }
 
   String _dateLabel(dynamic value) {
@@ -426,14 +456,16 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
                           Text(_dateLabel(data['createdAt']), style: const TextStyle(fontSize: 11, color: Color(0xFF8995A7))),
                         ])),
                         _followButton((data['ownerId'] ?? '').toString()),
-                        if (data['ownerId'] == _uid)
-                          PopupMenuButton<String>(
+                        PopupMenuButton<String>(
                             onSelected: (value) async {
+                              if (value == 'report') { await _reportPost(doc.id, (data['ownerId'] ?? '').toString()); }
                               if (value == 'delete') {
                                 final yes = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
                                   title: const Text('Hapus postingan?'),
                                   content: const Text('Postingan ini akan dihapus.'),
                                   actions: [
+          IconButton(tooltip:'Cari orang & postingan',onPressed:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const FlowaSearchScreen())),icon:const Icon(Icons.search_rounded)),
+          IconButton(tooltip:'Aktivitas',onPressed:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const NotificationsScreen())),icon:const Icon(Icons.notifications_none_rounded)),
                                     TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
                                     FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Hapus')),
                                   ],
@@ -441,7 +473,7 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
                                 if (yes == true) await doc.reference.delete();
                               }
                             },
-                            itemBuilder: (_) => const [PopupMenuItem(value: 'delete', child: Text('Hapus postingan'))],
+                            itemBuilder: (_) => [if (data['ownerId'] == _uid) const PopupMenuItem(value: 'delete', child: Text('Hapus postingan')), if (data['ownerId'] != _uid) const PopupMenuItem(value: 'report', child: Text('Laporkan postingan'))],
                           ),
                       ]),
                       const SizedBox(height: 13),
@@ -450,7 +482,7 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
                           style: const TextStyle(fontSize: 14, height: 1.45, color: Color(0xFF26344A))),
                       if (data['imageUrls'] is List && (data['imageUrls'] as List).isNotEmpty) ...[
                         const SizedBox(height: 10),
-                        ...((data['imageUrls'] as List).take(4).map((url) => Padding(
+                        ...((data['imageUrls'] as List).take(20).map((url) => Padding(
                           padding: const EdgeInsets.only(bottom: 5),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(13),
@@ -464,14 +496,14 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
                       const Divider(height: 1),
                       Row(children: [
                         Expanded(child: TextButton.icon(
-                          onPressed: () => _toggleLike(doc.reference, liked),
+                          onPressed: () => _toggleLike(doc.reference, liked, (data['ownerId'] ?? '').toString()),
                           icon: Icon(liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                             color: liked ? const Color(0xFFE34E72) : const Color(0xFF75839A)),
                           label: Text('Suka ${likes.length}',
                             style: TextStyle(color: liked ? const Color(0xFFE34E72) : const Color(0xFF75839A))),
                         )),
                         Expanded(child: TextButton.icon(
-                          onPressed: () => _showComments(doc.id),
+                          onPressed: () => _showComments(doc.id, (data['ownerId'] ?? '').toString()),
                           icon: const Icon(Icons.mode_comment_outlined),
                           label: Text('Komentar ${data['commentCount'] ?? 0}'),
                         )),
