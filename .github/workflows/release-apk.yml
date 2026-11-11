@@ -129,6 +129,17 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
 
+      - name: Publish latest APK download
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: flowa-latest
+          name: Flowa APK Terbaru
+          body: APK Flowa terbaru yang dibangun otomatis dari branch main.
+          files: build/app/outputs/flutter-apk/app-release.apk
+          overwrite_files: true
+          make_latest: true
+
+
   build-pwa:
     runs-on: ubuntu-latest
     permissions:
@@ -217,6 +228,11 @@ jobs:
           html = html.replace('<meta name="description" content="A new Flutter project." />', '<meta name="description" content="Flowa - Marketplace lokal untuk jual beli." />')
           if 'name="theme-color"' not in html:
               html = html.replace('<head>', '<head>\n  <meta name="theme-color" content="#1769e8">', 1)
+          download = '''
+          <a id="flowa-apk-download" href="https://github.com/gacoan449/Flowa/releases/download/flowa-latest/app-release.apk" style="position:fixed;right:16px;bottom:18px;z-index:99999;background:#1769e8;color:white;padding:13px 18px;border-radius:28px;text-decoration:none;font:600 14px Arial;box-shadow:0 4px 16px #0003">⬇ Download APK</a>
+          '''
+          if 'flowa-apk-download' not in html:
+              html = html.replace('</body>', download + '\\n</body>')
           index.write_text(html)
           PY
 
