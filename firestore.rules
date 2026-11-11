@@ -475,6 +475,28 @@ service cloud.firestore {
     }
 
     // ==============================
+    // FOLLOW / IKUTI PENGGUNA
+    // ==============================
+
+    match /user_follows/{followId} {
+      allow read: if signedIn()
+        && (resource.data.followerId == request.auth.uid
+          || resource.data.followingId == request.auth.uid);
+
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['followerId', 'followingId', 'createdAt'])
+        && request.resource.data.followerId == request.auth.uid
+        && request.resource.data.followingId is string
+        && request.resource.data.followingId != request.auth.uid
+        && followId == request.auth.uid + '_' + request.resource.data.followingId;
+
+      allow delete: if signedIn()
+        && resource.data.followerId == request.auth.uid;
+
+      allow update: if false;
+    }
+
+    // ==============================
     // KOMUNITAS / POSTINGAN
     // ==============================
 
