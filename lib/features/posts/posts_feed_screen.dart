@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -41,7 +40,7 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
     try {
       final imageUrls = <String>[];
       for (final image in _selectedImages.take(4)) {
-        imageUrls.add(await CloudinaryService.uploadImage(File(image.path), folder: 'flowa/posts'));
+        imageUrls.add(await CloudinaryService.uploadImageBytes(await image.readAsBytes(), image.name, folder: 'flowa/posts'));
       }
       await FirebaseFirestore.instance.collection('posts').add({
         'ownerId': _uid,
