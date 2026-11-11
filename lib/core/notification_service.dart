@@ -52,7 +52,7 @@ class NotificationService {
       }
       for (final change in snapshot.docChanges) {
         if (change.type != DocumentChangeType.added) continue;
-        final data = change.doc.data();
+        final data = change.doc.data() ?? <String, dynamic>{};
         final actor = (data['actorName'] ?? 'Pengguna Flowa').toString();
         final type = (data['type'] ?? '').toString();
         final action = type == 'like' ? 'menyukai postinganmu'
