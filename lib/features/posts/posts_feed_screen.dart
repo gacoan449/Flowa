@@ -107,12 +107,12 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      showDragHandle: true,
+      showDragHandle: true, backgroundColor: Theme.of(context).colorScheme.surface, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, refresh) => Padding(
           padding: EdgeInsets.fromLTRB(18, 8, 18, 18 + MediaQuery.of(context).viewInsets.bottom),
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Buat postingan', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
+            Text('Buat postingan', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -.4)),
             const SizedBox(height: 14),
             TextField(
               controller: _composer,
@@ -123,8 +123,8 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
               decoration: InputDecoration(
                 hintText: 'Apa yang sedang kamu pikirkan?',
                 filled: true,
-                fillColor: const Color(0xFFF3F6FB),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: .65),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide.none),
               ),
             ),
             TextButton.icon(
@@ -243,7 +243,7 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
   void _showComments(String postId, String postOwnerId) {
     final input = TextEditingController();
     showModalBottomSheet<void>(
-      context: context, isScrollControlled: true, showDragHandle: true,
+      context: context, isScrollControlled: true, showDragHandle: true, backgroundColor: Theme.of(context).colorScheme.surface, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
       builder: (sheetContext) => Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
         child: SizedBox(height: MediaQuery.of(sheetContext).size.height * .78,
