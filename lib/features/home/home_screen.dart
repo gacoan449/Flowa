@@ -178,8 +178,13 @@ class _HomeScreenState extends State<HomeScreen> {
           'categories': StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
             stream: FirebaseFirestore.instance.collection('categories').where('active', isEqualTo: true).snapshots(),
             builder: (context, snapshot) {
-              final docs = snapshot.data?.docs ?? [];
-              if (docs.isEmpty) return const SizedBox(height: 8);
+              // Abaikan dokumen kategori yang namanya kosong agar tidak
+              // menghasilkan ChoiceChip berbentuk pil tanpa tulisan.
+              final docs = (snapshot.data?.docs ?? []).where((doc) {
+                final name = (doc.data()['name'] ?? '').toString().trim();
+                return name.isNotEmpty;
+              }).toList();
+              if (docs.isEmpty) return const SizedBox.shrink();
               return SizedBox(
                 height: 54,
                 child: ListView(
