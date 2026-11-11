@@ -194,17 +194,6 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
     );
   }
 
-  Future<void> _sendActivity(String recipientId, String type, {String? postId, String? commentId, String? text}) async {
-    if (recipientId.isEmpty || recipientId == _uid) return;
-    final user = FirebaseAuth.instance.currentUser;
-    await FirebaseFirestore.instance.collection('notifications').add({
-      'recipientId': recipientId, 'actorId': _uid,
-      'actorName': (user?.displayName ?? user?.email?.split('@').first ?? 'Pengguna').toString(),
-      'type': type, 'postId': postId ?? '', 'commentId': commentId ?? '',
-      'text': text ?? '', 'read': false, 'createdAt': FieldValue.serverTimestamp(),
-    });
-  }
-
   Future<void> _toggleLike(DocumentReference<Map<String, dynamic>> ref, bool liked, String ownerId) async {
     try {
       final batch = FirebaseFirestore.instance.batch();
@@ -321,7 +310,7 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
     final input=TextEditingController();
     final value=await showDialog<String>(context:context,builder:(ctx)=>AlertDialog(
       title:Text('Balas $recipientName'),
-      content:TextField(controller:input, autofocus:true, maxLines:4 maxLength:1000,decoration:const InputDecoration(hintText:'Tulis balasan...')),
+      content:TextField(controller:input, autofocus:true, maxLines:4, maxLength:1000,decoration:const InputDecoration(hintText:'Tulis balasan...')),
       actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('Batal')),
         FilledButton(onPressed:()=>Navigator.pop(ctx,input.text.trim()),child:const Text('Kirim'))],
     ));
@@ -417,6 +406,18 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
             ),
           ),
         ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+          child: SegmentedButton<String>(
+            segments: const [
+              ButtonSegment(value: 'forYou', label: Text('Untuk Anda'), icon: Icon(Icons.auto_awesome_rounded)),
+              ButtonSegment(value: 'latest', label: Text('Terbaru'), icon: Icon(Icons.schedule_rounded)),
+            ],
+            selected: {_feedMode},
+            onSelectionChanged: (value) => setState(() => _feedMode = value.first),
+            showSelectedIcon: false,
+          ),
+        ),
         Expanded(child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
           stream: FirebaseFirestore.instance.collection('posts')
               .orderBy('createdAt', descending: true).limit(80).snapshots(),
@@ -426,7 +427,21 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
                 child: Text('Postingan belum dapat dimuat. Periksa Firestore Rules untuk koleksi posts.')),
             );
             if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-            final docs = snapshot.data!.docs;
+            final docs = [...snapshot.data!.docs];
+            if (_feedMode == 'forYou') {
+              final now = DateTime.now();
+              double score(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+                final data = doc.data();
+                final stamp = data['createdAt'];
+                final hours = stamp is Timestamp ? now.difference(stamp.toDate()).inHours.toDouble() : 24.0;
+                final likes = (data['likes'] as List?)?.length ?? 0;
+                final comments = (data['commentCount'] as num?)?.toDouble() ?? 0;
+                final images = (data['imageUrls'] as List?)?.length ?? 0;
+                final followed = _followedIds.contains(data['ownerId']) ? 8.0 : 0.0;
+                return (1 + likes * 2.0 + comments * 3.0 + images * 0.35 + followed) / (1 + hours / 20);
+              }
+              docs.sort((a, b) => score(b).compareTo(score(a)));
+            }
             if (docs.isEmpty) return Center(child: Padding(
               padding: const EdgeInsets.all(28),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
