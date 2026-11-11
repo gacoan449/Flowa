@@ -395,7 +395,7 @@ service cloud.firestore {
         && maintenanceIsOff()
         && request.resource.data.keys().hasOnly([
           'ownerId', 'ownerName', 'ownerPhoto', 'text',
-          'likes', 'commentCount', 'createdAt'
+          'likes', 'createdAt'
         ])
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.ownerName is string
@@ -405,8 +405,7 @@ service cloud.firestore {
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 2000
         && request.resource.data.likes is list
-        && request.resource.data.likes.size() == 0
-        && request.resource.data.commentCount == 0;
+        && request.resource.data.likes.size() == 0;
 
       // Pengguna hanya boleh menambah atau menghapus UID miliknya sendiri dari daftar suka.
       allow update: if signedIn()
