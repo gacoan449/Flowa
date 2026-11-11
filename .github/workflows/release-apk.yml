@@ -128,3 +128,109 @@ jobs:
           name: Flowa-release
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
+
+  build-pwa:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Generate Flutter Web platform
+        run: flutter create --platforms=web .
+
+      - name: Configure Firebase Web app
+        env:
+          FIREBASE_WEB_APP_ID: ${{ secrets.FIREBASE_WEB_APP_ID }}
+        run: |
+          if [ -z "$FIREBASE_WEB_APP_ID" ]; then
+            echo "::error::Tambahkan GitHub Actions secret FIREBASE_WEB_APP_ID dari Firebase Console > Project settings > Your apps > Web app."
+            exit 1
+          fi
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('lib/firebase_options.dart')
+          s = p.read_text()
+          s = s.replace("import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;", "import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;")
+          marker = "  static FirebaseOptions get currentPlatform {\n"
+          web = """  static FirebaseOptions get currentPlatform {
+            if (kIsWeb) {
+              const webAppId = String.fromEnvironment('FIREBASE_WEB_APP_ID');
+              if (webAppId.isEmpty) {
+                throw UnsupportedError('FIREBASE_WEB_APP_ID belum dikonfigurasi.');
+              }
+              return const FirebaseOptions(
+                apiKey: 'AIzaSyArsKK5zAgLlE0DfLs_RDOL1qbYutOCWzQ',
+                appId: webAppId,
+                messagingSenderId: '1099448464104',
+                projectId: 'flowa-d6d47',
+                authDomain: 'flowa-d6d47.firebaseapp.com',
+                storageBucket: 'flowa-d6d47.firebasestorage.app',
+              );
+            }
+          """
+          if "if (kIsWeb)" not in s:
+              s = s.replace(marker, web, 1)
+          p.write_text(s)
+          PY
+          echo "Firebase Web config will be injected at build time."
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Configure Flowa PWA metadata
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          p = Path('web/manifest.json')
+          data = json.loads(p.read_text())
+          data.update({
+            'name': 'Flowa - Marketplace',
+            'short_name': 'Flowa',
+            'description': 'Marketplace lokal Flowa untuk jual beli dan terhubung dengan penjual.',
+            'start_url': './',
+            'scope': './',
+            'display': 'standalone',
+            'background_color': '#ffffff',
+            'theme_color': '#1769e8',
+            'orientation': 'portrait-primary',
+            'prefer_related_applications': False,
+            'categories': ['shopping', 'business']
+          })
+          data['icons'] = [
+            {'src': 'icons/Icon-192.png', 'sizes': '192x192', 'type': 'image/png', 'purpose': 'any'},
+            {'src': 'icons/Icon-512.png', 'sizes': '512x512', 'type': 'image/png', 'purpose': 'any'},
+            {'src': 'icons/Icon-maskable-192.png', 'sizes': '192x192', 'type': 'image/png', 'purpose': 'maskable'},
+            {'src': 'icons/Icon-maskable-512.png', 'sizes': '512x512', 'type': 'image/png', 'purpose': 'maskable'}
+          ]
+          p.write_text(json.dumps(data, indent=2) + '\n')
+          index = Path('web/index.html')
+          html = index.read_text()
+          html = html.replace('<title>Flutter Demo</title>', '<title>Flowa - Marketplace</title>')
+          html = html.replace('<meta name="description" content="A new Flutter project." />', '<meta name="description" content="Flowa - Marketplace lokal untuk jual beli." />')
+          if 'name="theme-color"' not in html:
+              html = html.replace('<head>', '<head>\n  <meta name="theme-color" content="#1769e8">', 1)
+          index.write_text(html)
+          PY
+
+      - name: Build installable PWA
+        run: flutter build web --release --base-href "/Flowa/" --dart-define=FIREBASE_WEB_APP_ID="${{ secrets.FIREBASE_WEB_APP_ID }}"
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload PWA site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+      - name: Deploy PWA to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
