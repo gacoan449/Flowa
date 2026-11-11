@@ -68,6 +68,13 @@ class _FlowaSearchScreenState extends State<FlowaSearchScreen> {
                     leading:const Icon(Icons.article_outlined,color:Color(0xFF3267E9)),
                     title:Text((x['text']??'Album foto').toString(),maxLines:2,overflow:TextOverflow.ellipsis),
                     subtitle:Text((x['ownerName']??'Pengguna').toString()),
+                    onTap:()=>showModalBottomSheet<void>(context:context,showDragHandle:true,builder:(ctx)=>Padding(
+                      padding:const EdgeInsets.all(18),child:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.start,children:[
+                        Text((x['ownerName']??'Pengguna').toString(),style:const TextStyle(fontWeight:FontWeight.w800)),
+                        const SizedBox(height:8),Text((x['text']??'Album foto').toString()),
+                        const SizedBox(height:12),Text('${(x['imageUrls'] as List?)?.length??0} foto',style:const TextStyle(color:Color(0xFF3267E9))),
+                      ]),
+                    )),
                   ));}).toList());
                 },
               ),
