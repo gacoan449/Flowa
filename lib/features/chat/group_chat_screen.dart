@@ -56,7 +56,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       appBar: AppBar(title: Text(widget.groupName, style: const TextStyle(fontWeight: FontWeight.w800)), backgroundColor: const Color(0xFFF5F7FB)),
       body: Column(children: [
         Expanded(child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-          stream: _messages.orderBy('createdAt').limit(300).snapshots(),
+          stream: _messages.orderBy('createdAt', descending: true).limit(100).snapshots(),
           builder: (context, snapshot) {
             if (snapshot.hasError) return const Center(child: Text('Pesan grup tidak dapat dimuat.'));
             if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
@@ -66,7 +66,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               reverse: true, padding: const EdgeInsets.all(14),
               itemCount: docs.length,
               itemBuilder: (context, index) {
-                final doc = docs[docs.length - 1 - index]; final data = doc.data();
+                final doc = docs[index]; final data = doc.data();
                 final mine = data['senderId'] == _uid;
                 return Align(
                   alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
