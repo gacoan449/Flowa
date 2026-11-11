@@ -39,7 +39,6 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
         'ownerPhoto': FirebaseAuth.instance.currentUser?.photoURL ?? '',
         'text': text,
         'likes': <String>[],
-        'commentCount': 0,
         'createdAt': FieldValue.serverTimestamp(),
       });
       _composer.clear();
@@ -116,7 +115,9 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
   }
 
   Future<void> _sharePost(Map<String, dynamic> data) async {
-    final text = '${data['ownerName'] ?? 'Pengguna Flowa'} di Flowa:\n\n${data['text'] ?? ''}\n\nLihat di Flowa';
+    final author = (data['ownerName'] ?? 'Pengguna Flowa').toString();
+    final body = (data['text'] ?? '').toString();
+    final text = "$author di Flowa:\n\n$body\n\nLihat di Flowa";
     await Clipboard.setData(ClipboardData(text: text));
     if (mounted) ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Isi postingan disalin. Kamu bisa tempel untuk membagikannya.')),
@@ -193,8 +194,6 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
                         'text': text,
                         'createdAt': FieldValue.serverTimestamp(),
                       });
-                      await FirebaseFirestore.instance.collection('posts').doc(postId)
-                          .update({'commentCount': FieldValue.increment(1)});
                       input.clear();
                     } catch (e) {
                       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
@@ -354,7 +353,7 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
                         Expanded(child: TextButton.icon(
                           onPressed: () => _showComments(doc.id),
                           icon: const Icon(Icons.mode_comment_outlined),
-                          label: Text('Komentar ${(data['commentCount'] ?? 0)}'),
+                          label: const Text('Komentar'),
                         )),
                         Expanded(child: TextButton.icon(
                           onPressed: () => _sharePost(data),
