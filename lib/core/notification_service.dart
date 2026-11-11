@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -14,6 +15,7 @@ class NotificationService {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _local = FlutterLocalNotificationsPlugin();
   bool _initialized = false;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _activitySubscription;
 
   Future<void> initialize() async {
     if (_initialized) return;
@@ -32,7 +34,46 @@ class NotificationService {
     FirebaseMessaging.onMessage.listen(_showForeground);
     FirebaseMessaging.onBackgroundMessage(flowaFirebaseMessagingBackgroundHandler);
     FirebaseAuth.instance.authStateChanges().listen((user) {
-      if (user != null) _registerDevice(user.uid);
+      _activitySubscription?.cancel();
+      if (user != null) {
+        _registerDevice(user.uid);
+        _listenToActivity(user.uid);
+      }
+    });
+  }
+
+  void _listenToActivity(String uid) {
+    var firstSnapshot = true;
+    _activitySubscription = FirebaseFirestore.instance.collection('notifications')
+        .where('recipientId', isEqualTo: uid).limit(30).snapshots().listen((snapshot) {
+      if (firstSnapshot) {
+        firstSnapshot = false;
+        return;
+      }
+      for (final change in snapshot.docChanges) {
+        if (change.type != DocumentChangeType.added) continue;
+        final data = change.doc.data();
+        final actor = (data['actorName'] ?? 'Pengguna Flowa').toString();
+        final type = (data['type'] ?? '').toString();
+        final action = type == 'like' ? 'menyukai postinganmu'
+            : type == 'comment' ? 'mengomentari postinganmu'
+            : type == 'reply' ? 'membalas komentarmu'
+            : type == 'follow' ? 'mulai mengikutimu' : 'mengirim aktivitas';
+        _local.show(
+          change.doc.id.hashCode,
+          'Aktivitas Flowa',
+          '$actor $action',
+          const NotificationDetails(
+            android: AndroidNotificationDetails(
+              'flowa_messages', 'Pesan Flowa',
+              channelDescription: 'Notifikasi pesan dan aktivitas Flowa',
+              importance: Importance.high,
+              priority: Priority.high,
+              icon: '@mipmap/ic_launcher',
+            ),
+          ),
+        );
+      }
     });
   }
 
