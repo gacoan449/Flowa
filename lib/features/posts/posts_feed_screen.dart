@@ -163,11 +163,21 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
               if (following) {
                 await ref.delete();
               } else {
-                await ref.set({
+                final batch = FirebaseFirestore.instance.batch();
+                batch.set(ref, {
                   'followerId': _uid,
                   'followingId': ownerId,
                   'createdAt': FieldValue.serverTimestamp(),
                 });
+                final user = FirebaseAuth.instance.currentUser;
+                batch.set(FirebaseFirestore.instance.collection('notifications').doc(), {
+                  'recipientId': ownerId, 'actorId': _uid,
+                  'actorName': (user?.displayName ?? user?.email?.split('@').first ?? 'Pengguna').toString(),
+                  'type': 'follow', 'postId': '', 'commentId': '',
+                  'text': 'Mulai mengikutimu', 'read': false,
+                  'createdAt': FieldValue.serverTimestamp(),
+                });
+                await batch.commit();
               }
             } catch (e) {
               if (mounted) ScaffoldMessenger.of(context).showSnackBar(
