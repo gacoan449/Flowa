@@ -144,10 +144,11 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
     }
   }
 
-  Future<void> _sharePost(Map<String, dynamic> data) async {
+  Future<void> _sharePost(String postId, Map<String, dynamic> data) async {
     final author = (data['ownerName'] ?? 'Pengguna Flowa').toString();
     final body = (data['text'] ?? '').toString();
     final text = "$author di Flowa:\n\n$body\n\nLihat di Flowa";
+    try { await FirebaseFirestore.instance.collection('posts').doc(postId).update({'shareCount': FieldValue.increment(1)}); } catch (_) {}
     await Share.share(text, subject: 'Postingan Flowa');
   }
 
@@ -240,13 +241,14 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
                     final text = input.text.trim();
                     if (text.isEmpty) return;
                     try {
-                      await FirebaseFirestore.instance.collection('posts').doc(postId)
-                          .collection('comments').add({
-                        'uid': _uid,
-                        'name': _name,
-                        'text': text,
+                      final postRef = FirebaseFirestore.instance.collection('posts').doc(postId);
+                      final batch = FirebaseFirestore.instance.batch();
+                      batch.set(postRef.collection('comments').doc(), {
+                        'uid': _uid, 'name': _name, 'text': text,
                         'createdAt': FieldValue.serverTimestamp(),
                       });
+                      batch.update(postRef, {'commentCount': FieldValue.increment(1)});
+                      await batch.commit();
                       input.clear();
                     } catch (e) {
                       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
@@ -419,12 +421,12 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
                         Expanded(child: TextButton.icon(
                           onPressed: () => _showComments(doc.id),
                           icon: const Icon(Icons.mode_comment_outlined),
-                          label: const Text('Komentar'),
+                          label: Text('Komentar ${data['commentCount'] ?? 0}'),
                         )),
                         Expanded(child: TextButton.icon(
-                          onPressed: () => _sharePost(data),
+                          onPressed: () => _sharePost(doc.id, data),
                           icon: const Icon(Icons.share_outlined),
-                          label: const Text('Bagikan'),
+                          label: Text('Bagikan ${data['shareCount'] ?? 0}'),
                         )),
                       ]),
                     ]),
