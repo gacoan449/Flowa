@@ -92,10 +92,10 @@ class _ProductUploadScreenState extends State<ProductUploadScreen> {
     margin: const EdgeInsets.only(bottom: 14),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: const BorderSide(color: Color(0xFFE8ECF3))),
     child: Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Container(width: 38, height: 38, decoration: BoxDecoration(color: blue.withOpacity(.09), borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: blue)),
+          Container(width: 38, height: 38, decoration: BoxDecoration(color: blue.withOpacity(.09), borderRadius: BorderRadius.circular(16)), child: Icon(icon, color: blue)),
           const SizedBox(width: 11),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(heading, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
@@ -131,7 +131,7 @@ class _ProductUploadScreenState extends State<ProductUploadScreen> {
       child: ListView(padding: const EdgeInsets.fromLTRB(14, 10, 14, 110), children: [
         Container(
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF1769E8), Color(0xFF4B91F5)]), borderRadius: BorderRadius.circular(18)),
+          decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF1769E8), Color(0xFF4B91F5)]), borderRadius: BorderRadius.circular(24)),
           child: const Row(children: [
             Icon(Icons.storefront_rounded, color: Colors.white, size: 34), SizedBox(width: 13),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -145,7 +145,7 @@ class _ProductUploadScreenState extends State<ProductUploadScreen> {
         section('Foto produk', 'Tambahkan hingga 10 foto. Foto pertama menjadi sampul.', Icons.photo_library_outlined, [
           InkWell(
             onTap: loading ? null : pick,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(18),
             child: Container(
               width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 12),
               decoration: BoxDecoration(color: const Color(0xFFF5F8FF), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFB8D0FA))),
