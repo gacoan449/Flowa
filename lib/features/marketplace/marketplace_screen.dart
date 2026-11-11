@@ -47,9 +47,9 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
     final km=meters/1000;return '${km.toStringAsFixed(km<10?1:0)} km dari kamu';
   }
   Widget _locationBar()=>Material(
-    color:Theme.of(context).colorScheme.surfaceContainerHighest,
+    color:Theme.of(context).colorScheme.primary.withValues(alpha: .07),
     child:Padding(
-      padding:const EdgeInsets.symmetric(horizontal:14,vertical:5),
+      padding:const EdgeInsets.symmetric(horizontal:18,vertical:10),
       child:Row(children:[
         Icon(_locationLoading?Icons.gps_not_fixed:(_locationError==null?Icons.my_location:Icons.location_off),size:19),
         const SizedBox(width:8),
@@ -72,7 +72,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       return GridView.builder(
         shrinkWrap:widget.embedded,
         physics:widget.embedded?const NeverScrollableScrollPhysics():const AlwaysScrollableScrollPhysics(),
-        padding:EdgeInsets.all(widget.productSpacing),
+        padding:EdgeInsets.fromLTRB(widget.productSpacing + 6, widget.productSpacing + 8, widget.productSpacing + 6, widget.productSpacing + 16),
         gridDelegate:SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount:widget.productColumns.clamp(1,3),
           crossAxisSpacing:widget.productSpacing,
@@ -84,6 +84,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           final doc=docs[index],data=doc.data();
           final distance=_distanceLabel(data,buyerId);
           return Card(
+            elevation: 2,
+            shadowColor: Theme.of(context).colorScheme.primary.withValues(alpha: .10),
             clipBehavior:Clip.antiAlias,
             child:InkWell(
               onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>ProductDetailScreen(productId:doc.id))),
