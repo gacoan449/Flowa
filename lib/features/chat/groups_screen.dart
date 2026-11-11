@@ -72,7 +72,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
 
   Future<void> _joinGroup(DocumentReference<Map<String, dynamic>> ref, List<String> members) async {
     try {
-      await ref.update({'members': FieldValue.arrayUnion([_uid]), 'memberCount': members.length + 1});
+      await ref.update({'members': FieldValue.arrayUnion([_uid]), 'memberCount': FieldValue.increment(1)});
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Tidak bisa bergabung: $e')));
     }
@@ -84,7 +84,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
       return;
     }
     try {
-      await ref.update({'members': FieldValue.arrayRemove([_uid]), 'memberCount': members.length - 1});
+      await ref.update({'members': FieldValue.arrayRemove([_uid]), 'memberCount': FieldValue.increment(-1)});
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal keluar dari grup: $e')));
     }
