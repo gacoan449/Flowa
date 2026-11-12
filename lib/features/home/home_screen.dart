@@ -47,16 +47,17 @@ class _HomeScreenState extends State<HomeScreen> {
         if (config['showHeader'] != false && visibility['header'] != false)
           'header': Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+            padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
             decoration: BoxDecoration(
               gradient: LinearGradient(colors: [primary, accent]),
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(30)),
+              boxShadow: [BoxShadow(color: primary.withValues(alpha: .18), blurRadius: 24, offset: const Offset(0, 10))],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text((config['title'] ?? 'Flowa').toString(),
-                  style: const TextStyle(color: Colors.white, fontSize: 23, fontWeight: FontWeight.bold)),
+                  style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -.6)),
                 if ((config['subtitle'] ?? '').toString().isNotEmpty)
                   Text((config['subtitle'] ?? '').toString(),
                     style: const TextStyle(color: Colors.white70)),
@@ -69,7 +70,7 @@ class _HomeScreenState extends State<HomeScreen> {
             builder: (context, platformSnapshot) {
               if (platformSnapshot.data?.data()?['searchEnabled'] == false) return const SizedBox.shrink();
               return Padding(
-                padding: const EdgeInsets.fromLTRB(14, 12, 14, 4),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
                 child: TextField(
                   readOnly: true,
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MarketplaceSearchScreen())),
@@ -78,7 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     hintText: (config['searchHint'] ?? 'Cari barang di sekitar Anda...').toString(),
                     filled: true,
                     fillColor: Theme.of(context).colorScheme.surface,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
                   ),
                 ),
               );
